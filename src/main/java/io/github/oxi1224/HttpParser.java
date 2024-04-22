@@ -8,7 +8,7 @@ public class HttpParser {
   public String method;
   public String path;
   public String version;
-  public String body;
+  public String body = "";
   public HashMap<String, String> headers = new HashMap<String, String>();
 
   public HttpParser(BufferedReader r) throws IOException {
@@ -18,18 +18,18 @@ public class HttpParser {
     path = splitHeader[1];
     version = splitHeader[2].substring(splitHeader[2].indexOf('/') + 1).trim();
     String line = r.readLine(); 
-    while (line != "\r\n" && line != null) {
+    while (line != null && line.contains(":")) {
       String[] split = line.split(":", 2);
       if (split.length != 2) throw new Error("Tried splitting line by : but length != 2");
       headers.put(split[0].trim(), split[1].trim());
       line = r.readLine();
     }
-    while (line == "\r\n") line = r.readLine();
-    String rest = "";
-    while (line != null) {
-      rest += line;
-      line = r.readLine();
-    }
-    body = rest;
+    // while (line == "\r\n") line = r.readLine();
+    // String rest = "";
+    // while (line != null) {
+      // rest += line;
+      // line = r.readLine();
+    // }
+    // body = rest;
   }
 }
