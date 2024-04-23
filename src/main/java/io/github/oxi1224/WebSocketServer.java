@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -32,23 +33,8 @@ public class WebSocketServer {
       e.printStackTrace();
     }
     while (true) {
-      int payloadLen = (byte)(0x7F & in.read());
-      if (payloadLen == 126) {
-        byte[] bytes = in.readNBytes(2);
-        int newLen = 0; 
-        for (byte b : bytes) {
-          newLen = (newLen << 8) + (b & 0xFF);
-        }
-        payloadLen = newLen;
-      } else if (payloadLen == 127) {
-        byte[] bytes = in.readNBytes(8);
-        int newLen = 0; 
-        for (byte b : bytes) {
-          newLen = (newLen << 8) + (b & 0xFF);
-        }
-        payloadLen = newLen;
-      }
-      System.out.println(payloadLen);
+      DataFrame frame = new DataFrame(in);
+      System.out.println(new String(frame.getPayload(), StandardCharsets.UTF_8));
     }
   }
 
