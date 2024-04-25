@@ -32,10 +32,10 @@ public class WebSocketServer {
     } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
     }
-    while (true) {
-      DataFrame frame = new DataFrame(in);
-      System.out.println(new String(frame.getPayload(), StandardCharsets.UTF_8));
-    }
+    // while (true) {
+      // DataFrame frame = new DataFrame(in);
+      // System.out.println(new String(frame.getPayload(), StandardCharsets.UTF_8));
+    // }
   }
 
   private byte[] getHandshakeResponse(String key) throws NoSuchAlgorithmException, UnsupportedEncodingException {
