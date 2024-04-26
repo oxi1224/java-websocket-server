@@ -8,21 +8,101 @@ public class DataFrame {
   private boolean rsv1;
   private boolean rsv2;
   private boolean rsv3;
-  private byte opcode;
+  private Opcodes opcode;
   private boolean mask;
   private int payloadLength;
   private byte[] maskingKey = null;
   private byte[] payload;
-  public int dataType; 
+  private int dataType; 
+ 
+  public DataFrame() {}
+  public DataFrame(
+    boolean fin,
+    boolean rsv1,
+    boolean rsv2,
+    boolean rsv3,
+    Opcodes opcode,
+    boolean mask,
+    int payloadLength,
+    byte[] maskingKey,
+    byte[] payload
+  ) {
+    this.fin = fin;
+    this.rsv1 = rsv1;
+    this.rsv2 = rsv2;
+    this.rsv3 = rsv3;
+    this.opcode = opcode;
+    this.mask = mask;
+    this.payloadLength = payloadLength;
+    this.maskingKey = maskingKey;
+    this.payload = payload;
+  }
   
+  public byte[] getBytes() {
+    int calcLength = 2 + payloadLength; // 2 = min len;
+    if (payloadLength <= 65535 && payloadLength > 125) calcLength += 3; // 1 byte + next 2
+    else if (payloadLength > 65535) calcLength += 9; // 1 byte + next 8
+    if (mask) {
+      if (maskingKey.length != 4) throw new IllegalArgumentException("Mask is set to true but maskingkey length is not 4");
+      else calcLength += 4;
+    }
+    byte[] out = new byte[calcLength];
+    int curIdx = 0;
+    byte b = 0x0;
+    if (fin) b |= 0b10000000;
+    if (rsv1) b |= 0b01000000;
+    if (rsv2) b |= 0b00100000;
+    if (rsv3) b |= 0b00010000;
+    b |= opcode.getValue();
+    out[curIdx] = b;
+    curIdx += 1;
+
+    if (payloadLength <= 125) {
+      b = 0x0;
+      if (mask) b |= 0b10000000;
+      b |= payloadLength;
+      out[curIdx] = b;
+      curIdx += 1;
+    } else {
+      if (payloadLength <= 65535) {
+        if (mask) out[curIdx] = (byte)(0b10000000);
+        out[curIdx] |= 126;
+        out[curIdx + 1] = (byte)((payloadLength >> 8) & 0xFF); 
+        out[curIdx + 2] = (byte)(payloadLength & 0xFF);
+        curIdx += 3;
+      } else {
+        if (mask) out[curIdx] = (byte)(0b10000000);
+        out[curIdx] |= 127;
+        curIdx += 1;
+        for (int i = 7; i >= 0; i--) {
+          out[curIdx + 8 - i] = (byte) ((payloadLength >> (i * 8)) & 0xFF);
+          curIdx += 1;
+        }
+      }
+    }
+    if (mask) {
+      for (int i = 0; i < 4; i++) {
+        out[curIdx + i] = maskingKey[i];
+      }
+      curIdx += 4;
+      for (int i = 0; i < payloadLength; i++) {
+        out[curIdx + i] = (byte)(payload[i] ^ maskingKey[i % 4]);
+      }
+      curIdx += payloadLength - 1;
+    } else {
+      System.arraycopy(payload, 0, out, curIdx, payloadLength);
+    }
+    return out;
+  }
+
   public DataFrame read(InputStream in) throws IOException {
     byte b = (byte)(in.read()); 
     fin = (b & 0x80) != 0;
     rsv1 = (b & 0x70) != 0;
     rsv2 = (b & 0x60) != 0;
     rsv3 = (b & 0x50) != 0;
-    opcode = (byte)(b & 0x0F);
-    if (opcode == 0x1 || opcode == 0x2) dataType = opcode - 1;
+    opcode = Opcodes.findByVal(b & 0x0F);
+    if (opcode == Opcodes.TEXT || opcode == Opcodes.BINARY) dataType = opcode.getValue() - 1;
 
     b = (byte)(in.read());
     mask = (0x80 & b) != 0;
@@ -56,9 +136,10 @@ public class DataFrame {
   public boolean getRsv1() { return rsv1; }
   public boolean getRsv2() { return rsv2; }
   public boolean getRsv3() { return rsv3; }
-  public byte getOpcode() { return opcode; }
+  public Opcodes getOpcode() { return opcode; }
   public boolean getMask() { return mask; }
   public int getPayloadLength() { return payloadLength; }
   public byte[] getMaskingKey() { return maskingKey; }
   public byte[] getPayload() { return payload; }
+  public int getDataType() { return dataType; }
 }

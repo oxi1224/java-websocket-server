@@ -42,11 +42,11 @@ public class DataReader {
    * 0x3-0x7 & 0xB-0xF - nothing
   */
   private void handleOpCode(DataFrame f) throws IOException {
-    byte opcode = f.getOpcode();
-    if ((opcode >= 0x3 && opcode <= 0x7) || (opcode >= 0xB && opcode <= 0xF)) return;
-    if (opcode == 0x1 || opcode == 0x2) dataType = opcode - 1; // 0 - text ;; 1 - binary
-    if (opcode == 0x0 || !f.getFin()) {
-      if (f.dataType != dataType) return;
+    Opcodes opcode = f.getOpcode();
+    if (opcode == Opcodes.UNUSED) return;
+    if (opcode == Opcodes.TEXT || opcode == Opcodes.BINARY) dataType = opcode.getValue() - 1; // 0 - text ;; 1 - binary
+    if (opcode == Opcodes.CONTINUE|| !f.getFin()) {
+      if (f.getDataType() != dataType) return;
       readNext();
     }
   }
