@@ -6,30 +6,27 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 public class DataReader {
-  private InputStream in; 
   private byte[] payload;
   private DataFrame startFrame;
   private int dataType;
+  private InputStream in;
 
-  public DataReader(InputStream _in) {
-    in = _in;
-  }
-
-  public void read() throws IOException {
+  public Opcode read(InputStream in) throws IOException {
+    this.in = in;
     DataFrame frame = new DataFrame().read(in);
     startFrame = frame;
     payload = frame.getPayload();
-    handleOpCode(frame);
+    return handleOpCode(frame);
   }
 
-  private void readNext() throws IOException {
+  private Opcode readNext() throws IOException {
     DataFrame frame = new DataFrame().read(in);
     byte[] framePayload = frame.getPayload();
     byte[] newPayload = new byte[payload.length + framePayload.length];
     System.arraycopy(payload, 0, newPayload, 0, payload.length);
     System.arraycopy(framePayload, 0, newPayload, payload.length, framePayload.length);
     payload = newPayload;
-    handleOpCode(frame);
+    return handleOpCode(frame);
   }
 
   /**
@@ -41,14 +38,15 @@ public class DataReader {
    * 0x8 - closing
    * 0x3-0x7 & 0xB-0xF - nothing
   */
-  private void handleOpCode(DataFrame f) throws IOException {
-    Opcodes opcode = f.getOpcode();
-    if (opcode == Opcodes.UNUSED) return;
-    if (opcode == Opcodes.TEXT || opcode == Opcodes.BINARY) dataType = opcode.getValue() - 1; // 0 - text ;; 1 - binary
-    if (opcode == Opcodes.CONTINUE|| !f.getFin()) {
-      if (f.getDataType() != dataType) return;
+  private Opcode handleOpCode(DataFrame f) throws IOException {
+    Opcode opcode = f.getOpcode();
+    if (opcode == Opcode.UNUSED) return opcode;
+    if (opcode == Opcode.TEXT || opcode == Opcode.BINARY) dataType = opcode.getValue() - 1; // 0 - text ;; 1 - binary
+    if (opcode == Opcode.CONTINUE|| !f.getFin()) {
+      if (f.getDataType() != dataType) return opcode;
       readNext();
     }
+    return opcode;
   }
 
   public byte[] getBinaryPayload() {

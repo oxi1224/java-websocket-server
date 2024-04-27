@@ -12,8 +12,8 @@ class DataReaderTest {
   @Test void testContinuation() throws IOException {
     byte[] frames = hexToByteArray("010748656c6c6f2c208005776f726c64");
     InputStream in = new ByteArrayInputStream(frames);
-    DataReader reader = new DataReader(in);
-    reader.read();
+    DataReader reader = new DataReader();
+    reader.read(in);
     assertEquals("Hello, world", reader.getStringPayload(), String.format("Expected payload to be HelloWorld got %s", reader.getStringPayload()));
   }
 

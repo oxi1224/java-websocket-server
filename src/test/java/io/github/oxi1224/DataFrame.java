@@ -36,7 +36,7 @@ class DataFrameTest {
     // fin - 0, rsv1-3 - 0, mask - 0, data = "Hello"
     byte[] byteFrame = hexToByteArray("810548656c6c6f");
     byte[] bytePayload = "Hello".getBytes(StandardCharsets.UTF_8);
-    DataFrame frame = new DataFrame(true, false, false, false, Opcodes.TEXT, false, bytePayload.length, null, bytePayload);
+    DataFrame frame = new DataFrame(true, false, false, false, Opcode.TEXT, false, bytePayload.length, null, bytePayload);
     byte[] serialized = frame.getBytes();
     assertArrayEquals(byteFrame, serialized, "Incorrectly serialized frame");
   }
@@ -45,7 +45,7 @@ class DataFrameTest {
     // fin - 1 rsv1-3 - 0, mask - 1, data = "Hello"
     byte[] byteFrame = hexToByteArray("818537fa213d7f9f4d5158");
     byte[] bytePayload = "Hello".getBytes(StandardCharsets.UTF_8);
-    DataFrame frame = new DataFrame(true, false, false, false, Opcodes.TEXT, true, bytePayload.length, hexToByteArray("37fa213d"), bytePayload);
+    DataFrame frame = new DataFrame(true, false, false, false, Opcode.TEXT, true, bytePayload.length, hexToByteArray("37fa213d"), bytePayload);
     byte[] serialized = frame.getBytes();
     assertArrayEquals(byteFrame, serialized, "Incorrectly serialized masked frame");
   }

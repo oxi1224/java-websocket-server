@@ -10,28 +10,28 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Base64;
 
 public class WebSocketServer {
   private ServerSocket server;
   private Socket client;
-  private OutputStream out;
-  private InputStream in;
+  private ArrayList<ClientSocket> clients = new ArrayList<ClientSocket>(); 
 
   public void start() throws IOException {
     server = new ServerSocket(4000);
     client = server.accept();
-    out = client.getOutputStream();
-    in = client.getInputStream();
-    HttpParser parsed = new HttpParser(new BufferedReader(new InputStreamReader(in)));
-    try {
-      byte[] handshake = getHandshakeResponse(parsed.headers.get("Sec-WebSocket-Key"));
-      out.write(handshake, 0, handshake.length);
-    } catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-    }
+    // out = client.getOutputStream();
+    // in = client.getInputStream();
+    // HttpParser parsed = new HttpParser(new BufferedReader(new InputStreamReader(in)));
+    // try {
+      // byte[] handshake = getHandshakeResponse(parsed.headers.get("Sec-WebSocket-Key"));
+      // out.write(handshake, 0, handshake.length);
+    // } catch (NoSuchAlgorithmException e) {
+      // e.printStackTrace();
+    // } catch (UnsupportedEncodingException e) {
+      // e.printStackTrace();
+    // }
     // while (true) {
       // DataFrame frame = new DataFrame(in);
       // System.out.println(new String(frame.getPayload(), StandardCharsets.UTF_8));

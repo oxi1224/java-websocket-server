@@ -8,7 +8,7 @@ public class DataFrame {
   private boolean rsv1;
   private boolean rsv2;
   private boolean rsv3;
-  private Opcodes opcode;
+  private Opcode opcode;
   private boolean mask;
   private int payloadLength;
   private byte[] maskingKey = null;
@@ -21,7 +21,7 @@ public class DataFrame {
     boolean rsv1,
     boolean rsv2,
     boolean rsv3,
-    Opcodes opcode,
+    Opcode opcode,
     boolean mask,
     int payloadLength,
     byte[] maskingKey,
@@ -75,7 +75,7 @@ public class DataFrame {
         out[curIdx] |= 127;
         curIdx += 1;
         for (int i = 7; i >= 0; i--) {
-          out[curIdx + 8 - i] = (byte) ((payloadLength >> (i * 8)) & 0xFF);
+          out[curIdx + 8 - i] = (byte)((payloadLength >> (i * 8)) & 0xFF);
           curIdx += 1;
         }
       }
@@ -101,8 +101,8 @@ public class DataFrame {
     rsv1 = (b & 0x70) != 0;
     rsv2 = (b & 0x60) != 0;
     rsv3 = (b & 0x50) != 0;
-    opcode = Opcodes.findByVal(b & 0x0F);
-    if (opcode == Opcodes.TEXT || opcode == Opcodes.BINARY) dataType = opcode.getValue() - 1;
+    opcode = Opcode.findByVal(b & 0x0F);
+    if (opcode == Opcode.TEXT || opcode == Opcode.BINARY) dataType = opcode.getValue() - 1;
 
     b = (byte)(in.read());
     mask = (0x80 & b) != 0;
@@ -132,11 +132,19 @@ public class DataFrame {
     return this;
   };
 
+  public static byte[] genMaskingKey() {
+    byte[] mask = new byte[4];
+    for (int i = 0; i < 4; i++) {
+      mask[i] = (byte)(Math.random() * 255);
+    }
+    return mask;
+  }
+
   public boolean getFin() { return fin; }
   public boolean getRsv1() { return rsv1; }
   public boolean getRsv2() { return rsv2; }
   public boolean getRsv3() { return rsv3; }
-  public Opcodes getOpcode() { return opcode; }
+  public Opcode getOpcode() { return opcode; }
   public boolean getMask() { return mask; }
   public int getPayloadLength() { return payloadLength; }
   public byte[] getMaskingKey() { return maskingKey; }
