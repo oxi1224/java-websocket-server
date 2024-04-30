@@ -4,29 +4,34 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 
 public class DataReader {
   private byte[] payload;
-  private DataFrame startFrame;
   private int dataType;
   private InputStream in;
+  private HashSet<DataFrame> frameStream = new HashSet<DataFrame>();
 
-  public Opcode read(InputStream in) throws IOException {
+  public DataReader(InputStream in) {
     this.in = in;
-    DataFrame frame = new DataFrame().read(in);
-    startFrame = frame;
-    payload = frame.getPayload();
-    return handleOpCode(frame);
   }
 
-  private Opcode readNext() throws IOException {
+  public void read() throws IOException {
+    DataFrame frame = new DataFrame().read(in);
+    frameStream.add(frame);
+    payload = frame.getPayload();
+    if (!frame.getFin()) readNext();
+  }
+
+  private void readNext() throws IOException {
     DataFrame frame = new DataFrame().read(in);
     byte[] framePayload = frame.getPayload();
     byte[] newPayload = new byte[payload.length + framePayload.length];
     System.arraycopy(payload, 0, newPayload, 0, payload.length);
     System.arraycopy(framePayload, 0, newPayload, payload.length, framePayload.length);
     payload = newPayload;
-    return handleOpCode(frame);
+    frameStream.add(frame);
+    if (!frame.getFin()) readNext();
   }
 
   /**
@@ -38,18 +43,8 @@ public class DataReader {
    * 0x8 - closing
    * 0x3-0x7 & 0xB-0xF - nothing
   */
-  private Opcode handleOpCode(DataFrame f) throws IOException {
-    Opcode opcode = f.getOpcode();
-    if (opcode == Opcode.UNUSED) return opcode;
-    if (opcode == Opcode.TEXT || opcode == Opcode.BINARY) dataType = opcode.getValue() - 1; // 0 - text ;; 1 - binary
-    if (opcode == Opcode.CONTINUE|| !f.getFin()) {
-      if (f.getDataType() != dataType) return opcode;
-      readNext();
-    }
-    return opcode;
-  }
 
-  public byte[] getBinaryPayload() {
+  public byte[] getPayload() {
     return dataType == 1 ? payload : null;
   }
 
@@ -62,6 +57,10 @@ public class DataReader {
   }
 
   public DataFrame getStartFrame() {
-    return startFrame;
+    return frameStream.isEmpty() ? null : frameStream.iterator().next();
+  }
+  
+  public HashSet<DataFrame> getFrameStream() {
+    return frameStream;
   }
 }
