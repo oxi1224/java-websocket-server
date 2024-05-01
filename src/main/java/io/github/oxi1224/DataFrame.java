@@ -54,7 +54,7 @@ public class DataFrame {
     if (rsv2) b |= 0b00100000;
     if (rsv3) b |= 0b00010000;
     b |= opcode.getValue();
-    out[curIdx] = b;
+    out[curIdx] = (byte)(b & 0xFF);
     curIdx += 1;
 
     if (payloadLength <= 125) {

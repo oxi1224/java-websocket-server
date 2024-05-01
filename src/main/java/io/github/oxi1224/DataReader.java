@@ -16,10 +16,12 @@ public class DataReader {
     this.in = in;
   }
 
+  // TODO: Handle different dataType mid read;
   public void read() throws IOException {
     DataFrame frame = new DataFrame().read(in);
     frameStream.add(frame);
     payload = frame.getPayload();
+    dataType = frame.getOpcode().getValue() - 1; // 0 - text ;; 1 - binary
     if (!frame.getFin()) readNext();
   }
 
@@ -44,16 +46,16 @@ public class DataReader {
    * 0x3-0x7 & 0xB-0xF - nothing
   */
 
-  public byte[] getPayload() {
-    return dataType == 1 ? payload : null;
+  public byte[] getBytePayload() {
+    return payload;
   }
 
-  public String getStringPayload() {
-    return dataType == 0 ? new String(payload, StandardCharsets.UTF_8) : null;
+  public String getPayload() {
+    return new String(payload, StandardCharsets.UTF_8);
   }
 
-  public String getStringPayload(Charset chrset) {
-    return dataType == 0 ? new String(payload, chrset) : null;
+  public String getPayload(Charset chrset) {
+    return new String(payload, chrset);
   }
 
   public DataFrame getStartFrame() {

@@ -14,7 +14,7 @@ class DataReaderTest {
     InputStream in = new ByteArrayInputStream(frames);
     DataReader reader = new DataReader(in);
     reader.read();
-    assertEquals("Hello, world", reader.getStringPayload(), String.format("Expected payload to be HelloWorld got %s", reader.getStringPayload()));
+    assertEquals("Hello, world", reader.getPayload(), String.format("Expected payload to be HelloWorld got %s", reader.getPayload()));
   }
 
   public static byte[] hexToByteArray(String hstr) {

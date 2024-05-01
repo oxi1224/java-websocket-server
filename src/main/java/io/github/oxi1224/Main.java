@@ -5,11 +5,10 @@ import java.security.NoSuchAlgorithmException;
 
 public class Main {
   public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
-    WebSocketServer serv = new WebSocketServer(4000);
+    WebSocketServer serv = new WebSocketServer(9001);
     serv.onMessage(client -> {
-      client.write("Hello");
+      client.write(client.getPayload());
     });
     serv.start();
-    serv.close();
   }
 }

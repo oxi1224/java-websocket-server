@@ -47,7 +47,7 @@ public class DataWriter {
     write(true, Opcode.TEXT, payload);
   }
 
-  private void write(boolean fin, Opcode opcode, int payloadLength, byte[] maskingKey, byte[] payload) throws IOException {
+  public void write(boolean fin, Opcode opcode, int payloadLength, byte[] maskingKey, byte[] payload) throws IOException {
     DataFrame frame = new DataFrame(fin, false, false, false, opcode, false, payloadLength, maskingKey, payload);
     writeInternal(frame);
   }
@@ -55,5 +55,6 @@ public class DataWriter {
   private void writeInternal(DataFrame frame) throws IOException {
     byte[] serialized = frame.getBytes();
     out.write(serialized, 0, serialized.length);
+    out.flush();
   }
 }
