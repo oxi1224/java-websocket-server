@@ -12,6 +12,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.Scanner;
 import io.github.oxi1224.websocket.shared.*;
 
@@ -70,7 +71,7 @@ public class ClientSocket extends DataWriter {
   }
 
   public void close() throws IOException {
-    write(true, Opcode.CLOSE, StatusCode.S_1000.getBytes());
+    write(true, Opcode.CLOSE, new byte[0]);
     startTimeoutTimer(10000);
     try {
       reader.read();
@@ -120,7 +121,7 @@ public class ClientSocket extends DataWriter {
   public byte[] getBytePayload() { return this.reader.getBytePayload(); }
   public String getPayload() { return this.reader.getPayload(); }
   public String getPayload(Charset chrset) { return this.reader.getPayload(chrset); }
+  public DataFrame getPaylodStartFrame() { return this.reader.getStartFrame(); }
+  public HashSet<DataFrame> getPayloadFrames() { return this.reader.getFrameStream(); }
   public Socket getJavaSocket() { return this.javaSocket; }
-  public OutputStream getOutputSream() { return this.out; }
-  public InputStream getInputStream() { return this.in; }
 }

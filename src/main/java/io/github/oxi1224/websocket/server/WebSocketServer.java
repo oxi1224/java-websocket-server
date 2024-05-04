@@ -40,10 +40,6 @@ public class WebSocketServer extends java.net.ServerSocket {
       Thread clientThread = new Thread(() -> {
         while (!Thread.interrupted()) {
           try {
-            if (client.getInputStream().available() < 1) {
-              Thread.sleep(100);
-              continue;
-            }
             DataReader r = client.read();
             DataFrame refFrame = r.getStartFrame();
             Opcode opcode = refFrame.getOpcode();
@@ -51,10 +47,10 @@ public class WebSocketServer extends java.net.ServerSocket {
               onPingCallback.accept(refFrame, client);
             } else if (opcode == Opcode.CLOSE && onCloseCallback != null) {
               onCloseCallback.accept(client);
+            } else if (opcode == Opcode.PONG) { 
+              continue;
             } else if (onMessageCallback != null) onMessageCallback.accept(client); 
           } catch (IOException e) {
-            break;
-          } catch (InterruptedException e) {
             break;
           }
         }
