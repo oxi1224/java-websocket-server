@@ -1,4 +1,4 @@
-package io.github.oxi1224;
+package io.github.oxi1224.websocket.server;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,21 +10,21 @@ import java.security.NoSuchAlgorithmException;
 import java.nio.charset.Charset;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.Base64;
 import java.util.Scanner;
+import io.github.oxi1224.websocket.shared.*;
 
 public class ClientSocket extends DataWriter {
-  private UUID id;
   private Socket javaSocket;
-  public InputStream in;
-  public OutputStream out;
+  private InputStream in;
+  private OutputStream out;
   private DataReader reader;
   private Timer timer = new Timer();
+  private Consumer<ClientSocket> onCloseCallback;
  
   public ClientSocket(Socket sock) throws IOException {
     super(sock.getOutputStream());
-    id = UUID.randomUUID();
     javaSocket = sock;
     in = sock.getInputStream();
     out = sock.getOutputStream();
@@ -50,7 +50,7 @@ public class ClientSocket extends DataWriter {
     DataFrame refFrame = reader.getStartFrame();
     Opcode opcode = refFrame.getOpcode();
     if (opcode == Opcode.PING) pong(reader.getBytePayload());
-    if (opcode == Opcode.CLOSE) onReceiveClose();
+    if (opcode == Opcode.CLOSE) closeWithoutWait();
     return reader;
   }
 
@@ -70,21 +70,34 @@ public class ClientSocket extends DataWriter {
   }
 
   public void close() throws IOException {
-    write(true, Opcode.CLOSE, new byte[0]);
+    write(true, Opcode.CLOSE, StatusCode.S_1000.getBytes());
     startTimeoutTimer(10000);
     try {
       reader.read();
+      if (onCloseCallback != null) onCloseCallback.accept(this);
+      javaSocket.close();
+    } catch (IOException e) {} // Ignore error, timeoutTimer closed connection while trying to read
+    timer.cancel();
+  }
+
+  public void close(StatusCode statusCode, String reason) throws IOException{
+    byte[] stringBytes = reason.getBytes();
+    byte[] codeBytes = statusCode.getBytes();
+    byte[] payload = new byte[2 + stringBytes.length];
+    System.arraycopy(codeBytes, 0, payload, 0, 2);
+    System.arraycopy(stringBytes, 0, payload, 2, stringBytes.length);
+    write(true, Opcode.CLOSE, payload);
+    startTimeoutTimer(10000);
+    try {
+      reader.read();
+      if (onCloseCallback != null) onCloseCallback.accept(this);
       javaSocket.close();
     } catch (IOException e) {} // Ignore error, timeoutTimer closed connection while trying to read
     timer.cancel();
   }
 
   private void closeWithoutWait() throws IOException {
-    write(true, Opcode.CLOSE, new byte[0]);
-    javaSocket.close();
-  }
-
-  private void onReceiveClose() throws IOException {
+    if (onCloseCallback != null) onCloseCallback.accept(ClientSocket.this);
     write(true, Opcode.CLOSE, new byte[0]);
     javaSocket.close();
   }
@@ -102,10 +115,12 @@ public class ClientSocket extends DataWriter {
       }
     }, delay); 
   }
-
-  public UUID getID() { return this.id; }
+  
+  public void onClose(Consumer<ClientSocket> callback) { this.onCloseCallback = callback; }
   public byte[] getBytePayload() { return this.reader.getBytePayload(); }
   public String getPayload() { return this.reader.getPayload(); }
   public String getPayload(Charset chrset) { return this.reader.getPayload(chrset); }
   public Socket getJavaSocket() { return this.javaSocket; }
+  public OutputStream getOutputSream() { return this.out; }
+  public InputStream getInputStream() { return this.in; }
 }

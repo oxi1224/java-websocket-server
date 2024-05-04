@@ -1,4 +1,4 @@
-package io.github.oxi1224;
+package io.github.oxi1224.websocket.shared;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 class DataFrameTest {
-  @Test void testMaskedFrame() throws IOException {
+  @Test public void testMaskedFrame() throws IOException {
     // fin - 1 rsv1-3 - 0, mask - 1, data = "Hello"
     byte[] frame = hexToByteArray("818537fa213d7f9f4d5158");
     InputStream in = new ByteArrayInputStream(frame);
@@ -21,7 +21,7 @@ class DataFrameTest {
     assertEquals("Hello", parsedData, String.format("Expected payload to be \"Hello\", received %s", parsedData));
   }
 
-  @Test void testUnmaskedFrame() throws IOException {
+  @Test public void testUnmaskedFrame() throws IOException {
     // fin - 1, rsv1-3 - 0, mask - 0, data = "Hello"
     byte[] frame = hexToByteArray("810548656c6c6f");
     InputStream in = new ByteArrayInputStream(frame);
@@ -32,7 +32,7 @@ class DataFrameTest {
     assertEquals("Hello", parsedData, String.format("Expected payload to be \"Hello\", received %s", parsedData));
   }
 
-  @Test void testSerialization() {
+  @Test public void testSerialization() {
     // fin - 0, rsv1-3 - 0, mask - 0, data = "Hello"
     byte[] byteFrame = hexToByteArray("810548656c6c6f");
     byte[] bytePayload = "Hello".getBytes(StandardCharsets.UTF_8);
@@ -41,7 +41,7 @@ class DataFrameTest {
     assertArrayEquals(byteFrame, serialized, "Incorrectly serialized frame");
   }
 
-  @Test void testSerializationMasked() {
+  @Test public void testSerializationMasked() {
     // fin - 1 rsv1-3 - 0, mask - 1, data = "Hello"
     byte[] byteFrame = hexToByteArray("818537fa213d7f9f4d5158");
     byte[] bytePayload = "Hello".getBytes(StandardCharsets.UTF_8);

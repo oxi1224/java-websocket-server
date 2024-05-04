@@ -1,4 +1,4 @@
-package io.github.oxi1224;
+package io.github.oxi1224.websocket.shared;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -9,7 +9,7 @@ import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class DataReaderTest {
-  @Test void testContinuation() throws IOException {
+  @Test public void testContinuation() throws IOException {
     byte[] frames = hexToByteArray("010748656c6c6f2c208005776f726c64");
     InputStream in = new ByteArrayInputStream(frames);
     DataReader reader = new DataReader(in);

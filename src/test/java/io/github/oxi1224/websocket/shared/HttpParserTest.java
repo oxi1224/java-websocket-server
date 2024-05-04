@@ -1,4 +1,4 @@
-package io.github.oxi1224;
+package io.github.oxi1224.websocket.shared;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 class HttpParserTest {
-  @Test void checkParser() throws IOException {
+  @Test public void checkParser() throws IOException {
     String rawHeader = "GET /chat HTTP/1.1\r\nHost: example.com:8000\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13";
     Scanner s = new Scanner(new ByteArrayInputStream(rawHeader.getBytes()), StandardCharsets.UTF_8);
     HttpParser parser = new HttpParser(s);

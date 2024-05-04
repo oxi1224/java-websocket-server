@@ -1,4 +1,4 @@
-package io.github.oxi1224;
+package io.github.oxi1224.websocket.shared;
 
 import java.util.HashMap;
 import java.util.Scanner;
