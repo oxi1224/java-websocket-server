@@ -13,7 +13,8 @@ public class HttpParser {
   public HttpParser(Scanner s) {
     s.useDelimiter("\r\n");
     String[] splitHeader = s.nextLine().split(" ");
-    if (splitHeader.length != 3) throw new Error("Given buffer is not a valid http header");
+    // TODO: Proper validation, rework this entirely
+    if (false) throw new Error("Given buffer is not a valid http header");
     method = splitHeader[0];
     path = splitHeader[1];
     version = splitHeader[2].substring(splitHeader[2].indexOf('/') + 1).trim();

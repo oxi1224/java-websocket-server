@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
+import java.util.ArrayList;
 
 public class DataReader {
   private byte[] payload;
   private int dataType;
   private InputStream in;
-  private HashSet<DataFrame> frameStream = new HashSet<DataFrame>();
+  private ArrayList<DataFrame> frameStream;
 
   public DataReader(InputStream in) {
     this.in = in;
@@ -18,7 +18,8 @@ public class DataReader {
 
   // TODO: Handle different dataType mid read;
   public void read() throws IOException {
-    DataFrame frame = new DataFrame().read(in);
+    frameStream = new ArrayList<DataFrame>();
+    DataFrame frame = DataFrame.read(in);
     frameStream.add(frame);
     payload = frame.getPayload();
     dataType = frame.getOpcode().getValue() - 1; // 0 - text ;; 1 - binary
@@ -26,7 +27,7 @@ public class DataReader {
   }
 
   private void readNext() throws IOException {
-    DataFrame frame = new DataFrame().read(in);
+    DataFrame frame = DataFrame.read(in);
     byte[] framePayload = frame.getPayload();
     byte[] newPayload = new byte[payload.length + framePayload.length];
     System.arraycopy(payload, 0, newPayload, 0, payload.length);
@@ -62,7 +63,7 @@ public class DataReader {
     return frameStream.isEmpty() ? null : frameStream.iterator().next();
   }
   
-  public HashSet<DataFrame> getFrameStream() {
+  public ArrayList<DataFrame> getFrameStream() {
     return frameStream;
   }
 }

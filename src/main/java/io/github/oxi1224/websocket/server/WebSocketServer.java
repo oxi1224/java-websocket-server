@@ -8,9 +8,9 @@ import io.github.oxi1224.websocket.shared.*;
 
 public class WebSocketServer extends java.net.ServerSocket {
   private ArrayList<Pair<ClientSocket, Thread>> clients = new ArrayList<Pair<ClientSocket, Thread>>();
-  private ClientCallback onMessageCallback;
-  private ClientCallbackWithFrame onPingCallback;
-  private ClientCallback onCloseCallback;
+  private ClientCallback onMessageCallback = (c) -> { assert true; }; // Do nothing
+  private ClientCallbackWithFrame onPingCallback = (f, c) -> { assert true; }; // Do nothing
+  private ClientCallback onCloseCallback = (c) -> { assert true; }; // Do nothing
 
   public interface ClientCallback {
     void accept(ClientSocket client) throws IOException;
@@ -43,14 +43,15 @@ public class WebSocketServer extends java.net.ServerSocket {
             DataReader r = client.read();
             DataFrame refFrame = r.getStartFrame();
             Opcode opcode = refFrame.getOpcode();
-            if (opcode == Opcode.PING && onPingCallback != null) {
+            if (opcode == Opcode.PING) {
               onPingCallback.accept(refFrame, client);
-            } else if (opcode == Opcode.CLOSE && onCloseCallback != null) {
+            } else if (opcode == Opcode.CLOSE) {
               onCloseCallback.accept(client);
             } else if (opcode == Opcode.PONG) { 
               continue;
             } else if (onMessageCallback != null) onMessageCallback.accept(client); 
           } catch (IOException e) {
+            e.printStackTrace();
             break;
           }
         }

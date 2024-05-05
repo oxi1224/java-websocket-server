@@ -52,9 +52,10 @@ public class DataWriter {
     writeInternal(frame);
   }
 
+  public void flush() throws IOException { out.flush(); }
+
   private void writeInternal(DataFrame frame) throws IOException {
     byte[] serialized = frame.getBytes();
     out.write(serialized, 0, serialized.length);
-    out.flush();
   }
 }

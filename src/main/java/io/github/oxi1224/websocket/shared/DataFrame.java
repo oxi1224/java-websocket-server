@@ -95,18 +95,19 @@ public class DataFrame {
     return out;
   }
 
-  public DataFrame read(InputStream in) throws IOException {
+  public static DataFrame read(InputStream in) throws IOException {
     byte b = (byte)(in.read()); 
-    fin = (b & 0x80) != 0;
-    rsv1 = (b & 0x70) != 0;
-    rsv2 = (b & 0x60) != 0;
-    rsv3 = (b & 0x50) != 0;
-    opcode = Opcode.findByVal(b & 0x0F);
+    boolean fin = (b & 0x80) != 0;
+    boolean rsv1 = (b & 0x70) != 0;
+    boolean rsv2 = (b & 0x60) != 0;
+    boolean rsv3 = (b & 0x50) != 0;
+    Opcode opcode = Opcode.findByVal(b & 0x0F);
+    int dataType;
     if (opcode == Opcode.TEXT || opcode == Opcode.BINARY) dataType = opcode.getValue() - 1;
 
     b = (byte)(in.read());
-    mask = (0x80 & b) != 0;
-    payloadLength = (byte)(0x7F & b);
+    boolean mask = (0x80 & b) != 0;
+    int payloadLength = (byte)(0x7F & b);
     int bytesToRead = 0;
     if (payloadLength == 126) bytesToRead = 2;
     if (payloadLength == 127) bytesToRead = 8;
@@ -122,14 +123,14 @@ public class DataFrame {
       maskingKey = new byte[4];
       in.read(maskingKey, 0, 4);
     }
-    payload = new byte[payloadLength];
+    byte[] payload = new byte[payloadLength];
     in.read(payload, 0, payloadLength);
     if (mask) {
       for (int i = 0; i < payloadLength; i++) {
         payload[i] = (byte)(payload[i] ^ maskingKey[i % 4]);
       }
     }
-    return this;
+    return new DataFrame(fin, rsv1, rsv2, rsv3, opcode, mask, payloadLength, maskingKey, payload);
   };
 
   public static byte[] genMaskingKey() {

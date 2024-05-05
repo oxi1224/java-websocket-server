@@ -11,8 +11,8 @@ import java.nio.charset.Charset;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
+import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Scanner;
 import io.github.oxi1224.websocket.shared.*;
 
@@ -98,14 +98,14 @@ public class ClientSocket extends DataWriter {
   }
 
   private void closeWithoutWait() throws IOException {
-    if (onCloseCallback != null) onCloseCallback.accept(ClientSocket.this);
+    if (onCloseCallback != null) onCloseCallback.accept(this);
     write(true, Opcode.CLOSE, new byte[0]);
     javaSocket.close();
   }
 
   private void startTimeoutTimer(long delay) {
     timer.schedule(new TimerTask() {
-      @Override 
+      @Override
       public void run() {
         try {
           closeWithoutWait();
@@ -121,7 +121,7 @@ public class ClientSocket extends DataWriter {
   public byte[] getBytePayload() { return this.reader.getBytePayload(); }
   public String getPayload() { return this.reader.getPayload(); }
   public String getPayload(Charset chrset) { return this.reader.getPayload(chrset); }
-  public DataFrame getPaylodStartFrame() { return this.reader.getStartFrame(); }
-  public HashSet<DataFrame> getPayloadFrames() { return this.reader.getFrameStream(); }
+  public DataFrame getPayloadStartFrame() { return this.reader.getStartFrame(); }
+  public ArrayList<DataFrame> getPayloadFrames() { return this.reader.getFrameStream(); }
   public Socket getJavaSocket() { return this.javaSocket; }
 }
