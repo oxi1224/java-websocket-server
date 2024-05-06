@@ -35,7 +35,11 @@ public class WebSocketServer extends java.net.ServerSocket {
   public void start() throws IOException, NoSuchAlgorithmException {
     while (true) {
       ClientSocket client = new ClientSocket(this.accept());
-      client.sendHandshake();
+      try {
+        client.sendHandshake();
+      } catch (InterruptedException e) {
+        client.close();
+      }
       client.onClose((c) -> cleanupSocket(c));
       Thread clientThread = new Thread(() -> {
         while (!Thread.interrupted()) {

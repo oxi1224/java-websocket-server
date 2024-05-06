@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Scanner;
 import java.util.Timer;
@@ -26,28 +27,32 @@ public class Client extends DataWriter {
   private Consumer<Client> onMessageCallback;
   private Timer timer = new Timer(); 
 
-  private Client(Socket socket) throws IOException {
+  private Client(Socket socket) throws IOException, InterruptedException {
     super(socket.getOutputStream());
-    // TODO: Clean this up
-    byte[] httpRequest = ("GET / HTTP/1.1\r\n" +
-      "Host: " + socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "\r\n" +
-      "Upgrade: websocket\r\n" +
-      "Connection: Upgrade\r\n" +
-      "Sec-WebSocket-Key: " + generateKey() + "\r\n" +
-      "Sec-WebSocket-Version: 13\r\n\r\n"
-    ).getBytes();
-    socket.getOutputStream().write(httpRequest, 0, httpRequest.length);
+    // TODO: Clean this up (Change HeaderMap into actual class)
+    HttpRequest.HeaderMap headers = new HttpRequest.HeaderMap();
+    headers.put("Host", Arrays.asList(socket.getInetAddress().getHostAddress() + ":" + socket.getPort()));
+    headers.put("Upgrade", Arrays.asList("websocket"));
+    headers.put("Connection", Arrays.asList("Upgrade"));
+    headers.put("Sec-WebSocket-Key", Arrays.asList(generateKey()));
+    headers.put("Sec-WebSocket-Version", Arrays.asList("13"));
+    HttpRequest req = new HttpRequest("GET", "/", "1.1", headers, "");
+    byte[] bytes = req.getBytes(); 
+    socket.getOutputStream().write(bytes, 0, bytes.length);
     this.socket = socket;
     in = (socket.getInputStream());
-    HttpParser p = new HttpParser(new Scanner(in));
+    while (in.available() == 0) {
+      Thread.sleep(100);
+    }
+    HttpResponse res = HttpResponse.parse(in);
     reader = new DataReader(new BufferedInputStream(in));
   }
 
-  public static Client connect(String host, int port) throws IOException {
+  public static Client connect(String host, int port) throws IOException, InterruptedException {
     return new Client(new Socket(host, port)); 
   }
 
-  public static Client connect(String host, int port, InetAddress localAddr, int localPort) throws IOException {
+  public static Client connect(String host, int port, InetAddress localAddr, int localPort) throws IOException, InterruptedException {
     return new Client(new Socket(host, port, localAddr, localPort));
   }
 

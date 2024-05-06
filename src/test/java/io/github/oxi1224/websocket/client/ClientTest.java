@@ -12,7 +12,7 @@ import java.security.NoSuchAlgorithmException;
 
 class ClientTest {
   @Test
-  public void testPing() throws IOException {
+  public void testPing() throws IOException, InterruptedException{
     WebSocketServer server = new WebSocketServer(9000);
     startServerThread(server);
     Client client = Client.connect("127.0.0.1", 9000);
@@ -23,21 +23,21 @@ class ClientTest {
   }
 
   @Test
-  public void testClose() throws IOException {
+  public void testClose() throws IOException, InterruptedException {
     WebSocketServer server = new WebSocketServer(9001);
     startServerThread(server);
     Client client = Client.connect("127.0.0.1", 9001);
-
+    
     client.close();
     DataFrame frame = client.getPayloadStartFrame();
     assertEquals(Opcode.CLOSE, frame.getOpcode(), "Expected client to receive back a CLOSE frame");
   }
 
-  @Test void testCommunication() throws IOException {
+  @Test void testCommunication() throws IOException, InterruptedException {
     WebSocketServer server = new WebSocketServer(9002);
     startServerThread(server);
     Client client = Client.connect("127.0.0.1", 9002);
-    
+
     client.write("Hello World");
     client.read();
     assertEquals("Hello World", client.getPayload(), "Sent/Received data differ");
