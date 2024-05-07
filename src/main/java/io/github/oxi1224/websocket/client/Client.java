@@ -8,13 +8,14 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 
+import io.github.oxi1224.http.HeaderMap;
+import io.github.oxi1224.http.HttpRequest;
+import io.github.oxi1224.http.HttpResponse;
 import io.github.oxi1224.websocket.shared.*;
 
 public class Client extends DataWriter {
@@ -29,13 +30,13 @@ public class Client extends DataWriter {
 
   private Client(Socket socket) throws IOException, InterruptedException {
     super(socket.getOutputStream());
-    // TODO: Clean this up (Change HeaderMap into actual class)
-    HttpRequest.HeaderMap headers = new HttpRequest.HeaderMap();
-    headers.put("Host", Arrays.asList(socket.getInetAddress().getHostAddress() + ":" + socket.getPort()));
-    headers.put("Upgrade", Arrays.asList("websocket"));
-    headers.put("Connection", Arrays.asList("Upgrade"));
-    headers.put("Sec-WebSocket-Key", Arrays.asList(generateKey()));
-    headers.put("Sec-WebSocket-Version", Arrays.asList("13"));
+    HeaderMap headers = new HeaderMap(
+      new HeaderMap.HeaderPair("Host", socket.getInetAddress().getHostAddress() + ":" + socket.getPort()),
+      new HeaderMap.HeaderPair("Upgrade", "websocket"),
+      new HeaderMap.HeaderPair("Connection", "Upgrade"),
+      new HeaderMap.HeaderPair("Sec-WebSocket-Key", generateKey()),
+      new HeaderMap.HeaderPair("Sec-WebSocket-Version", "13")
+    );
     HttpRequest req = new HttpRequest("GET", "/", "1.1", headers, "");
     byte[] bytes = req.getBytes(); 
     socket.getOutputStream().write(bytes, 0, bytes.length);

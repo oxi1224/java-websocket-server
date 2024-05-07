@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+
+import io.github.oxi1224.common.Pair;
 import io.github.oxi1224.websocket.shared.*;
 
 public class WebSocketServer extends java.net.ServerSocket {

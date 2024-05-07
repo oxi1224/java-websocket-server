@@ -1,10 +1,9 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.http;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -16,12 +15,6 @@ public class HttpResponse {
   private HeaderMap headers;
   private String body;
 
-  public static class HeaderMap extends LinkedHashMap<String, List<String>> {
-    public HeaderMap() {
-      super();
-    }
-  }
-    
   public HttpResponse(
     String version,
     int statusCode,
@@ -86,7 +79,7 @@ public class HttpResponse {
   public String toString() {
     String out = "";
     out += String.format("HTTP/%s %s %s\r\n", version, statusCode, statusMessage);
-    for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+    for (Map.Entry<String, ArrayList<String>> entry : headers.entrySet()) {
       out += entry.getKey() + ": ";
       for (Iterator<String> i = entry.getValue().iterator(); i.hasNext();) {
         out += i.next();
@@ -104,10 +97,9 @@ public class HttpResponse {
   }
 
   public List<String> getHeader(String key) { return headers.get(key); }
-  public String getFirstHeader(String key) { return headers.get(key).iterator().next(); }
+  public String getFirstValue(String key) { return headers.getFirstValue(key); }
   public String getVersion() { return version; }
   public int getStatusCode() { return statusCode; }
   public String getStatusMessage() { return statusMessage; }
-  public HeaderMap getHeaderMap() { return headers; }
   public String getBody() { return body; }
 }
