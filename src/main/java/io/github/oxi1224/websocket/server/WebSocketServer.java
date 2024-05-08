@@ -3,13 +3,13 @@ package io.github.oxi1224.websocket.server;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-import io.github.oxi1224.common.Pair;
 import io.github.oxi1224.websocket.shared.*;
 
 public class WebSocketServer extends java.net.ServerSocket {
-  private ArrayList<Pair<ClientSocket, Thread>> clients = new ArrayList<Pair<ClientSocket, Thread>>();
+  public Map<ClientSocket, Thread> clients = new HashMap<>();
   private ClientCallback onMessageCallback = (c) -> { assert true; }; // Do nothing
   private ClientCallbackWithFrame onPingCallback = (f, c) -> { assert true; }; // Do nothing
   private ClientCallback onCloseCallback = (c) -> { assert true; }; // Do nothing
@@ -57,25 +57,21 @@ public class WebSocketServer extends java.net.ServerSocket {
               continue;
             } else if (onMessageCallback != null) onMessageCallback.accept(client); 
           } catch (IOException e) {
-            e.printStackTrace();
+            if (e.getMessage() != "Socket closed") e.printStackTrace();
             break;
           }
         }
-      }); 
-      clients.add(new Pair<ClientSocket, Thread>(client, clientThread));
+      });
+      clients.put(client, clientThread);
       clientThread.start();
     }
   }
 
   private void cleanupSocket(ClientSocket socket) {
-    for (Pair<ClientSocket, Thread> p : clients) {
-      if (p.getKey().equals(socket)) {
-        p.getValue().interrupt();
-        clients.remove(p);
-        break;
-      }
+    synchronized(clients) {
+      Thread t = clients.remove(socket);
+      if (t != null) t.interrupt();
     }
-    return;
   }
 
   public void onMessage(ClientCallback callback) {

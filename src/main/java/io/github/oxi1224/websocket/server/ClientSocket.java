@@ -12,7 +12,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 
 import io.github.oxi1224.http.HeaderMap;
@@ -25,7 +24,7 @@ public class ClientSocket extends DataWriter {
   private InputStream in;
   private OutputStream out;
   private DataReader reader;
-  private Timer timer = new Timer();
+  private Timer timer;
   private Consumer<ClientSocket> onCloseCallback;
  
   public ClientSocket(Socket sock) throws IOException {
@@ -81,8 +80,8 @@ public class ClientSocket extends DataWriter {
     startTimeoutTimer(10000);
     try {
       reader.read();
-      if (onCloseCallback != null) onCloseCallback.accept(this);
       javaSocket.close();
+      if (onCloseCallback != null) onCloseCallback.accept(this);
     } catch (IOException e) {} // Ignore error, timeoutTimer closed connection while trying to read
     timer.cancel();
   }
@@ -97,19 +96,20 @@ public class ClientSocket extends DataWriter {
     startTimeoutTimer(10000);
     try {
       reader.read();
-      if (onCloseCallback != null) onCloseCallback.accept(this);
       javaSocket.close();
+      if (onCloseCallback != null) onCloseCallback.accept(this);
     } catch (IOException e) {} // Ignore error, timeoutTimer closed connection while trying to read
     timer.cancel();
   }
 
   private void closeWithoutWait() throws IOException {
-    if (onCloseCallback != null) onCloseCallback.accept(this);
     write(true, Opcode.CLOSE, new byte[0]);
     javaSocket.close();
+    if (onCloseCallback != null) onCloseCallback.accept(this);
   }
 
   private void startTimeoutTimer(long delay) {
+    timer = new Timer();
     timer.schedule(new TimerTask() {
       @Override
       public void run() {

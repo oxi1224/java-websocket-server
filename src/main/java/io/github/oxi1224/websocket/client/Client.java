@@ -22,11 +22,10 @@ public class Client extends DataWriter {
   private final Socket socket;
   private InputStream in;
   private DataReader reader;
-  private boolean stopListening = false;
   private Consumer<Client> onCloseCallback;
   private Consumer<Client> onPingCallback;
   private Consumer<Client> onMessageCallback;
-  private Timer timer = new Timer(); 
+  private Timer timer; 
 
   private Client(Socket socket) throws IOException, InterruptedException {
     super(socket.getOutputStream());
@@ -57,7 +56,7 @@ public class Client extends DataWriter {
     return new Client(new Socket(host, port, localAddr, localPort));
   }
 
-  public DataReader read() throws IOException {
+  public synchronized DataReader read() throws IOException {
     reader.read();
     DataFrame refFrame = reader.getStartFrame();
     Opcode opcode = refFrame.getOpcode();
@@ -112,6 +111,7 @@ public class Client extends DataWriter {
   }
 
   private void startTimeoutTimer(long delay) {
+    timer = new Timer();
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
@@ -126,16 +126,16 @@ public class Client extends DataWriter {
     }, delay); 
   }
 
-  public void listen() throws IOException {
-    while (!stopListening) {
-      reader.read();
-      if (onMessageCallback !=  null) onMessageCallback.accept(this);
+  public void listen() {
+    while (true) {
+      try {
+        read();
+        if (onMessageCallback !=  null) onMessageCallback.accept(this);
+      } catch (IOException e) {
+        if (e.getMessage() != "Socket closed") e.printStackTrace();
+        break;
+      }
     }
-    stopListening = false;
-  }
-
-  public void stopListening() {
-    stopListening = true;
   }
 
   public static String generateKey() {
