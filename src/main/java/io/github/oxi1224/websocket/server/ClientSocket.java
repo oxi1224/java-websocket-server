@@ -51,13 +51,18 @@ public class ClientSocket extends DataWriter {
     out.write(outbuf, 0, outbuf.length);
   }
 
-  public DataReader read() throws IOException {
-    reader.read();
+  public void read() throws IOException {
+    try {
+      reader.read();
+    } catch (UnexpectedFrameException e) {
+      e.printStackTrace();
+      close();
+      return;
+    }
     DataFrame refFrame = reader.getStartFrame();
     Opcode opcode = refFrame.getOpcode();
     if (opcode == Opcode.PING) pong(reader.getBytePayload());
     if (opcode == Opcode.CLOSE) closeWithoutWait();
-    return reader;
   }
 
   public void ping() throws IOException {
@@ -69,6 +74,10 @@ public class ClientSocket extends DataWriter {
       if (resOpcode != Opcode.PONG) javaSocket.close();
       else timer.cancel();
     } catch (IOException e) {} // Ignore error, timeoutTimer closed connection while trying to read
+    catch (UnexpectedFrameException e) { 
+      e.printStackTrace();
+      close();
+    }
   }
 
   public void pong(byte[] pingPayload) throws IOException {
@@ -83,6 +92,12 @@ public class ClientSocket extends DataWriter {
       javaSocket.close();
       if (onCloseCallback != null) onCloseCallback.accept(this);
     } catch (IOException e) {} // Ignore error, timeoutTimer closed connection while trying to read
+    catch (UnexpectedFrameException e) {
+      e.printStackTrace();
+      timer.cancel();
+      closeWithoutWait();
+      return;
+    }
     timer.cancel();
   }
 
@@ -99,6 +114,12 @@ public class ClientSocket extends DataWriter {
       javaSocket.close();
       if (onCloseCallback != null) onCloseCallback.accept(this);
     } catch (IOException e) {} // Ignore error, timeoutTimer closed connection while trying to read
+    catch (UnexpectedFrameException e) {
+      e.printStackTrace();
+      timer.cancel();
+      closeWithoutWait();
+      return;
+    }
     timer.cancel();
   }
 

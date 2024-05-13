@@ -13,7 +13,6 @@ public class DataFrame {
   private int payloadLength;
   private byte[] maskingKey = null;
   private byte[] payload;
-  private int dataType; 
  
   public DataFrame() {}
   public DataFrame(
@@ -102,8 +101,6 @@ public class DataFrame {
     boolean rsv2 = (b & 0x60) != 0;
     boolean rsv3 = (b & 0x50) != 0;
     Opcode opcode = Opcode.findByVal(b & 0x0F);
-    int dataType;
-    if (opcode == Opcode.TEXT || opcode == Opcode.BINARY) dataType = opcode.getValue() - 1;
 
     b = (byte)(in.read());
     boolean mask = (0x80 & b) != 0;
@@ -150,5 +147,4 @@ public class DataFrame {
   public int getPayloadLength() { return payloadLength; }
   public byte[] getMaskingKey() { return maskingKey; }
   public byte[] getPayload() { return payload; }
-  public int getDataType() { return dataType; }
 }

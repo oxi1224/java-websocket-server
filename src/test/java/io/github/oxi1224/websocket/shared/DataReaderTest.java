@@ -9,12 +9,12 @@ import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 class DataReaderTest {
-  @Test public void testContinuation() throws IOException {
+  @Test public void testContinuation() throws IOException, UnexpectedFrameException {
     byte[] frames = hexToByteArray("010748656c6c6f2c208005776f726c64");
     InputStream in = new ByteArrayInputStream(frames);
     DataReader reader = new DataReader(in);
     reader.read();
-    assertEquals("Hello, world", reader.getPayload(), String.format("Expected payload to be HelloWorld got %s", reader.getPayload()));
+    assertEquals("Hello, world", reader.getPayload(), String.format("Expected payload to be Hello, World got %s", reader.getPayload()));
   }
 
   public static byte[] hexToByteArray(String hstr) {

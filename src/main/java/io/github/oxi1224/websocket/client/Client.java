@@ -56,19 +56,31 @@ public class Client extends DataWriter {
     return new Client(new Socket(host, port, localAddr, localPort));
   }
 
-  public synchronized DataReader read() throws IOException {
-    reader.read();
+  public void read() throws IOException {
+    try {
+      reader.read();
+    } catch (UnexpectedFrameException e) {
+      e.printStackTrace();
+      close();
+      return;
+    }
     DataFrame refFrame = reader.getStartFrame();
     Opcode opcode = refFrame.getOpcode();
     if (opcode == Opcode.PING) pong(reader.getBytePayload());
     if (opcode == Opcode.CLOSE) onReceiveClose(refFrame);
-    return reader;
   }
 
   public void pingServer() throws IOException {
     write(true, Opcode.PING, new byte[0]);
     startTimeoutTimer(10000);
-    reader.read();
+    try {
+      reader.read();
+    } catch (UnexpectedFrameException e) {
+      e.printStackTrace();
+      timer.cancel();
+      close();
+      return;
+    }
     timer.cancel();
     Opcode resOpcode = reader.getStartFrame().getOpcode();
     if (resOpcode != Opcode.PONG) socket.close();
@@ -82,7 +94,11 @@ public class Client extends DataWriter {
   public void close() throws IOException {
     write(true, Opcode.CLOSE, new byte[0]);
     startTimeoutTimer(10000);
-    reader.read();
+    try {
+      reader.read();
+    } catch (UnexpectedFrameException e) {
+      e.printStackTrace();
+    }
     timer.cancel();
     try {
       socket.close();
@@ -98,7 +114,11 @@ public class Client extends DataWriter {
     System.arraycopy(stringBytes, 0, payload, 2, stringBytes.length);
     write(true, Opcode.CLOSE, payload);
     startTimeoutTimer(10000);
-    reader.read();
+    try {
+      reader.read();
+    } catch (UnexpectedFrameException e) {
+      e.printStackTrace();
+    }
     timer.cancel();
     socket.close();
     if (onCloseCallback != null) onCloseCallback.accept(this);

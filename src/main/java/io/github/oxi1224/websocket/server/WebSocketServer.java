@@ -46,8 +46,8 @@ public class WebSocketServer extends java.net.ServerSocket {
       Thread clientThread = new Thread(() -> {
         while (!Thread.interrupted()) {
           try {
-            DataReader r = client.read();
-            DataFrame refFrame = r.getStartFrame();
+            client.read();
+            DataFrame refFrame = client.getPayloadStartFrame();
             Opcode opcode = refFrame.getOpcode();
             if (opcode == Opcode.PING) {
               onPingCallback.accept(refFrame, client);

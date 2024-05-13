@@ -8,7 +8,6 @@ import java.util.ArrayList;
 
 public class DataReader {
   private byte[] payload;
-  private int dataType;
   private InputStream in;
   private ArrayList<DataFrame> frameStream;
 
@@ -16,18 +15,17 @@ public class DataReader {
     this.in = in;
   }
 
-  // TODO: Handle different dataType mid read;
-  public void read() throws IOException {
+  public void read() throws IOException, UnexpectedFrameException {
     frameStream = new ArrayList<DataFrame>();
     DataFrame frame = DataFrame.read(in);
     frameStream.add(frame);
     payload = frame.getPayload();
-    dataType = frame.getOpcode().getValue() - 1; // 0 - text ;; 1 - binary
     if (!frame.getFin()) readNext();
   }
 
-  private void readNext() throws IOException {
+  private void readNext() throws IOException, UnexpectedFrameException {
     DataFrame frame = DataFrame.read(in);
+    if (frame.getOpcode() != Opcode.CONTINUE) throw new UnexpectedFrameException("Expected to receive CONTINUE frame");
     byte[] framePayload = frame.getPayload();
     byte[] newPayload = new byte[payload.length + framePayload.length];
     System.arraycopy(payload, 0, newPayload, 0, payload.length);
