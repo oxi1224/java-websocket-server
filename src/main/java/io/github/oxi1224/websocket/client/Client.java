@@ -13,10 +13,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 
-import io.github.oxi1224.http.HeaderMap;
-import io.github.oxi1224.http.HttpRequest;
-import io.github.oxi1224.http.HttpResponse;
-import io.github.oxi1224.websocket.shared.*;
+import io.github.oxi1224.websocket.core.DataFrame;
+import io.github.oxi1224.websocket.core.DataReader;
+import io.github.oxi1224.websocket.core.DataWriter;
+import io.github.oxi1224.websocket.core.Opcode;
+import io.github.oxi1224.websocket.core.StatusCode;
+import io.github.oxi1224.websocket.shared.exceptions.UnexpectedFrameException;
+import io.github.oxi1224.websocket.shared.http.HeaderMap;
+import io.github.oxi1224.websocket.shared.http.HttpRequest;
+import io.github.oxi1224.websocket.shared.http.HttpResponse;
 
 public class Client extends DataWriter {
   private final Socket socket;

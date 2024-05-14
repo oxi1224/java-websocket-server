@@ -1,4 +1,4 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,7 +14,7 @@ class DataFrameTest {
     // fin - 1 rsv1-3 - 0, mask - 1, data = "Hello"
     byte[] frame = hexToByteArray("818537fa213d7f9f4d5158");
     InputStream in = new ByteArrayInputStream(frame);
-    DataFrame parsed = new DataFrame().read(in);
+    DataFrame parsed = DataFrame.read(in);
     assertEquals(true, parsed.getFin(), "Fin should be true in frame 2");
     assertEquals(true, parsed.getMask(), "Mask should be true in frame 2");
     String parsedData = new String(parsed.getPayload(), StandardCharsets.UTF_8);
@@ -25,7 +25,7 @@ class DataFrameTest {
     // fin - 1, rsv1-3 - 0, mask - 0, data = "Hello"
     byte[] frame = hexToByteArray("810548656c6c6f");
     InputStream in = new ByteArrayInputStream(frame);
-    DataFrame parsed = new DataFrame().read(in);
+    DataFrame parsed = DataFrame.read(in);
     assertEquals(true, parsed.getFin(), "Fin should be true in frame 1");
     assertEquals(false, parsed.getMask(), "Mask should be false in frame 1");
     String parsedData = new String(parsed.getPayload(), StandardCharsets.UTF_8);

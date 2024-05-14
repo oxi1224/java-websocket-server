@@ -1,4 +1,4 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.core;
 
 public enum StatusCode {
   S_1000(1000, new byte[]{(byte)0x03, (byte)0xE8}), 

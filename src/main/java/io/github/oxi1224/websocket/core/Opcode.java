@@ -1,4 +1,4 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.core;
 
 public enum Opcode {
   CONTINUE(0x0),

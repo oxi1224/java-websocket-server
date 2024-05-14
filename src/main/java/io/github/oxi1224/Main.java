@@ -1,18 +1,31 @@
 package io.github.oxi1224;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.UUID;
 
-import io.github.oxi1224.websocket.client.Client;
 import io.github.oxi1224.websocket.server.*;
-import io.github.oxi1224.websocket.shared.ClassScanner;
-import io.github.oxi1224.websocket.shared.MessageHandler;
+import io.github.oxi1224.websocket.shared.util.ClassScanner;
+import io.github.oxi1224.websocket.shared.Handler;
 
-@MessageHandler(id = "test")
 public class Main {
-  public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
+  public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException, NoSuchMethodException {
+    WebSocketServer serv = new WebSocketServer(9001);
+    List<Class<?>> classes = ClassScanner.findAllWithAnnotation(Handler.class, "io.github.oxi1224");
+    for (Class<?> c : classes) {
+      if (!MessageHandler.class.isAssignableFrom(c)) throw new Error("Class with @Handler annotation does not implement MessageHandler interface");
+      Method msgcallback = c.getMethod("onMessage", ClientSocket.class);
+      serv.onMessage(client -> { 
+        try {
+          msgcallback.invoke(c.getDeclaredConstructor().newInstance(), client);
+        } catch (IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) { e.printStackTrace(); }
+      });
+    }
+    serv.start();
+    serv.close();
+
     // WebSocketServer serv = new WebSocketServer(9001);
     // serv.onMessage(client -> {
       // client.write(client.getPayload());

@@ -1,4 +1,4 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.shared.util;
 
 import java.io.File;
 import java.io.IOException;

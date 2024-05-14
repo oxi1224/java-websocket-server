@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 import io.github.oxi1224.websocket.client.Client;
-import io.github.oxi1224.websocket.shared.Opcode;
+import io.github.oxi1224.websocket.core.Opcode;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

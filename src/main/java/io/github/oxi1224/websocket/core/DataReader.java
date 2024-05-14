@@ -1,10 +1,12 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.core;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+
+import io.github.oxi1224.websocket.shared.exceptions.UnexpectedFrameException;
 
 public class DataReader {
   private byte[] payload;
@@ -34,16 +36,6 @@ public class DataReader {
     frameStream.add(frame);
     if (!frame.getFin()) readNext();
   }
-
-  /**
-   * 0x0 - continuation (concatenate payload)
-   * 0x1 - text
-   * 0x2 - binary
-   * 0x9 - ping
-   * 0xA - pong (same payload, max len = 125)
-   * 0x8 - closing
-   * 0x3-0x7 & 0xB-0xF - nothing
-  */
 
   public byte[] getBytePayload() {
     return payload;

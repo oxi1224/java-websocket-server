@@ -1,9 +1,9 @@
-package io.github.oxi1224.http;
+package io.github.oxi1224.websocket.shared.http;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import io.github.oxi1224.common.Pair;
+import io.github.oxi1224.websocket.shared.util.Pair;
 
 public class HeaderMap extends LinkedHashMap<String, ArrayList<String>> {
   public static class HeaderPair extends Pair<String, String> {

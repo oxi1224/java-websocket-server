@@ -1,4 +1,4 @@
-package io.github.oxi1224.http;
+package io.github.oxi1224.websocket.shared.http;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

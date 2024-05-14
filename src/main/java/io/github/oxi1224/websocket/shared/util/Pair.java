@@ -1,4 +1,4 @@
-package io.github.oxi1224.common;
+package io.github.oxi1224.websocket.shared.util;
 
 public class Pair<K, V> {
   private K key;

@@ -7,6 +7,6 @@ import java.lang.annotation.ElementType;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MessageHandler {
+public @interface Handler {
   public String id() default "";
 }
