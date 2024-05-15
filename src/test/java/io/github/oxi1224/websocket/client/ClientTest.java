@@ -46,9 +46,10 @@ class ClientTest {
   public static void startServerThread(WebSocketServer srv) {
     Thread t = new Thread(() -> {
       try {
-        srv.onMessage((c) -> {
-          c.write(c.getPayload());
-        });
+        srv.setHandlersPacakgeName("io.github.oxi1224.websocket.client");
+        // srv.onMessage((c) -> {
+          // c.write(c.getPayload());
+        // });
         srv.start();
       } catch (IOException e) {
         e.printStackTrace();

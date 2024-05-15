@@ -31,12 +31,18 @@ public class DataWriter {
   }
 
   public void write(boolean fin, Opcode opcode, byte[] payload) throws IOException {
-    write(fin, opcode, payload.length, null, payload);
+    write(fin, false, false, false, opcode, false, payload.length, null, payload);
   }
 
   public void write(boolean fin, Opcode opcode, String payload) throws IOException {
     byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
-    write(fin, opcode, payloadBytes.length, null, payloadBytes);
+    write(fin, false, false, false, opcode, false, payloadBytes.length, null, payloadBytes);
+  }
+
+  public void write(boolean fin, Opcode opcode, String messageID, String payload) throws IOException {
+    String fullPayload = messageID + " " + payload;
+    byte[] payloadBytes = fullPayload.getBytes(StandardCharsets.UTF_8);
+    write(fin, true, false, false, opcode, false, payloadBytes.length, null, payloadBytes);
   }
 
   public void write(byte[] payload) throws IOException {
@@ -47,9 +53,8 @@ public class DataWriter {
     write(true, Opcode.TEXT, payload);
   }
 
-  public void write(boolean fin, Opcode opcode, int payloadLength, byte[] maskingKey, byte[] payload) throws IOException {
-    DataFrame frame = new DataFrame(fin, false, false, false, opcode, false, payloadLength, maskingKey, payload);
-    writeInternal(frame);
+  public void write(String messageID, String payload) throws IOException {
+    write(true, Opcode.TEXT, messageID, payload);
   }
 
   public void flush() throws IOException { out.flush(); }

@@ -12,17 +12,18 @@ import java.util.Map;
 import io.github.oxi1224.websocket.core.DataFrame;
 import io.github.oxi1224.websocket.core.Opcode;
 import io.github.oxi1224.websocket.shared.Handler;
+import io.github.oxi1224.websocket.shared.HandlerPair;
+import io.github.oxi1224.websocket.shared.MessageHandler;
+import io.github.oxi1224.websocket.shared.DefaultHandlerID;
+import io.github.oxi1224.websocket.shared.exceptions.InvalidConfigurationError;
 import io.github.oxi1224.websocket.shared.exceptions.InvalidHandlerError;
 import io.github.oxi1224.websocket.shared.util.ClassScanner;
-import io.github.oxi1224.websocket.shared.util.Pair;
 
 public class WebSocketServer extends java.net.ServerSocket {
   public Map<ClientSocket, Thread> clients = new HashMap<>();
-  public Map<String, Pair<Object, Method>> handlers = new HashMap<>();
+  public Map<String, HandlerPair> handlers = new HashMap<String, HandlerPair>();
   private String handlersPackageName;
-  private ClientCallback onMessageCallback = (c) -> { assert true; }; // Do nothing
-  private ClientCallbackWithFrame onPingCallback = (f, c) -> { assert true; }; // Do nothing
-  private ClientCallback onCloseCallback = (c) -> { assert true; }; // Do nothing
+  private boolean normalWebsocket = false;
 
   public interface ClientCallback {
     void accept(ClientSocket client) throws IOException;
@@ -47,15 +48,26 @@ public class WebSocketServer extends java.net.ServerSocket {
   public void setHandlersPacakgeName(String name) {
     handlersPackageName = name;
   }
-  
+
+  public void useNormalWebsocket() {
+    normalWebsocket = true;
+  }
+ 
   public void start() throws IOException, NoSuchAlgorithmException {
-    // collectHandlers();
+    if (handlersPackageName == null || handlersPackageName.isBlank()) {
+      throw new InvalidConfigurationError("handlersPackageName is blank, set it via setHandlersPackageName");
+    }
+    collectHandlers(); 
+
     while (true) {
       ClientSocket client = new ClientSocket(this.accept());
+      HandlerPair closeHandler = handlers.get(DefaultHandlerID.CLOSE);
+      if (closeHandler != null) client.onClose((c) -> closeHandler.invoke(c));
       try {
         client.sendHandshake();
       } catch (InterruptedException e) {
         client.close();
+        break;
       }
       client.onClose((c) -> cleanupSocket(c));
       createClientThread(client);
@@ -69,13 +81,33 @@ public class WebSocketServer extends java.net.ServerSocket {
           client.read();
           DataFrame refFrame = client.getPayloadStartFrame();
           Opcode opcode = refFrame.getOpcode();
-          if (opcode == Opcode.PING) {
-            onPingCallback.accept(refFrame, client);
-          } else if (opcode == Opcode.CLOSE) {
-            onCloseCallback.accept(client);
-          } else if (opcode == Opcode.PONG) { 
-            continue;
-          } else if (onMessageCallback != null) onMessageCallback.accept(client); 
+          switch (opcode) {
+            case PING: {
+              HandlerPair p = handlers.get(DefaultHandlerID.PING);
+              if (p != null) p.invoke(client);
+              break;
+            }
+            case CLOSE: {
+              HandlerPair p = handlers.get(DefaultHandlerID.CLOSE);
+              if (p != null) p.invoke(client);
+              break;
+            }
+            case PONG: {
+              break;
+            }
+            default: {
+              if (normalWebsocket || refFrame.getRsv1()) {
+                HandlerPair p = handlers.get(DefaultHandlerID.DEFAULT);
+                if (p != null) p.invoke(client);
+              } else {
+                String payload = client.getPayload();
+                String messageID = payload.substring(0, payload.indexOf(" "));
+                HandlerPair p = handlers.get(handlers.containsKey(messageID) ? messageID : DefaultHandlerID.DEFAULT);
+                if (p != null) p.invoke(client);
+              }
+              break;
+            }
+          }
         } catch (IOException e) {
           if (e.getMessage() != "Socket closed") e.printStackTrace();
           break;
@@ -102,7 +134,7 @@ public class WebSocketServer extends java.net.ServerSocket {
       }
       try {
         Object classInstance = c.getDeclaredConstructor().newInstance();
-        handlers.put(msgID, new Pair<>(classInstance, method));
+        handlers.put(msgID, new HandlerPair(classInstance, method));
       } catch (
         InvocationTargetException | IllegalAccessException |
         InstantiationException | NoSuchMethodException e
@@ -118,17 +150,5 @@ public class WebSocketServer extends java.net.ServerSocket {
       Thread t = clients.remove(socket);
       if (t != null) t.interrupt();
     }
-  }
-
-  public void onMessage(ClientCallback callback) {
-    onMessageCallback = callback;
-  }
-
-  public void onPing(ClientCallbackWithFrame callback) {
-    onPingCallback = callback; 
-  }
-
-  public void onClose(ClientCallback callback) {
-    onCloseCallback = callback;
   }
 }

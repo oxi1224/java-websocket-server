@@ -90,6 +90,7 @@ public class ClientSocket extends DataWriter {
     write(true, Opcode.PONG, pingPayload);
   }
 
+
   public void close() throws IOException {
     write(true, Opcode.CLOSE, new byte[0]);
     startTimeoutTimer(10000);
@@ -107,7 +108,7 @@ public class ClientSocket extends DataWriter {
     timer.cancel();
   }
 
-  public void close(StatusCode statusCode, String reason) throws IOException{
+  public void close(StatusCode statusCode, String reason) throws IOException {
     byte[] stringBytes = reason.getBytes();
     byte[] codeBytes = statusCode.getBytes();
     byte[] payload = new byte[2 + stringBytes.length];
