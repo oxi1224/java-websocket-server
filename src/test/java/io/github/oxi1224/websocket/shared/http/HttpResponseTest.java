@@ -13,6 +13,7 @@ class HttpResponseTest {
       "User-Agent: whatever\r\n" +
       "Accept: text/html\r\n" +
       "Connection: keep-alive\r\n" +
+      "Content-Length: 11\r\n" +
       "\r\n" +
       "Hello World"
     );
@@ -20,7 +21,7 @@ class HttpResponseTest {
     assertEquals("1.1", req.getVersion(), "Wrong version provided");
     assertEquals(200, req.getStatusCode(), "Wrong status code provided");
     assertEquals("OK", req.getStatusMessage(), "Wrong status message provided");
-    String header = req.getFirstValue("Host");
+    String header = req.getFirstHeaderValue("Host");
     assertEquals("localhost:8080", header, "Invalid Host header provided");
     assertEquals("Hello World", req.getBody(), "Invalid body provided");
     assertEquals(rawHeader, req.toString(), "Incorrect parsing to string");

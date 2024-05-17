@@ -6,13 +6,13 @@ import org.junit.jupiter.api.Test;
 import io.github.oxi1224.websocket.core.DataFrame;
 import io.github.oxi1224.websocket.core.Opcode;
 import io.github.oxi1224.websocket.server.WebSocketServer;
+import io.github.oxi1224.websocket.shared.exceptions.ConnectionException;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
 class ClientTest {
   @Test
-  public void testPing() throws IOException, InterruptedException{
+  public void testPing() throws IOException, ConnectionException {
     WebSocketServer server = new WebSocketServer(9000);
     startServerThread(server);
     Client client = Client.connect("127.0.0.1", 9000);
@@ -23,7 +23,7 @@ class ClientTest {
   }
 
   @Test
-  public void testClose() throws IOException, InterruptedException {
+  public void testClose() throws IOException, ConnectionException {
     WebSocketServer server = new WebSocketServer(9001);
     startServerThread(server);
     Client client = Client.connect("127.0.0.1", 9001);
@@ -33,7 +33,7 @@ class ClientTest {
     assertEquals(Opcode.CLOSE, frame.getOpcode(), "Expected client to receive back a CLOSE frame");
   }
 
-  @Test void testCommunication() throws IOException, InterruptedException {
+  @Test void testCommunication() throws IOException, ConnectionException {
     WebSocketServer server = new WebSocketServer(9002);
     startServerThread(server);
     Client client = Client.connect("127.0.0.1", 9002);
@@ -47,13 +47,8 @@ class ClientTest {
     Thread t = new Thread(() -> {
       try {
         srv.setHandlersPacakgeName("io.github.oxi1224.websocket.client");
-        // srv.onMessage((c) -> {
-          // c.write(c.getPayload());
-        // });
         srv.start();
       } catch (IOException e) {
-        e.printStackTrace();
-      } catch (NoSuchAlgorithmException e) {
         e.printStackTrace();
       }
     });

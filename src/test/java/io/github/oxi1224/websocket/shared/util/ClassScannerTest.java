@@ -6,12 +6,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.oxi1224.websocket.shared.Handler;
+import io.github.oxi1224.websocket.messages.Handler;
 
 class ClassScannerTest {
   @Test
   public void testScanning() {
-    List<Class<?>> found = ClassScanner.findAllWithAnnotation(Handler.class, "io.github.oxi1224");
-    // assertEquals("io.github.oxi1224.Main", found.get(0).getName(), "Invalid name received");
+    List<Class<?>> found = ClassScanner.findAllWithAnnotation(Handler.class, "io.github.oxi1224.websocket.shared.util");
+    assertEquals("io.github.oxi1224.websocket.shared.util.TestHandler", found.get(0).getName(), "Invalid name received");
   }
 }

@@ -1,12 +1,11 @@
 package io.github.oxi1224;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
 import io.github.oxi1224.websocket.server.*;
 
 public class Main {
-  public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException, NoSuchMethodException {
+  public static void main(String[] args) throws IOException {
     WebSocketServer serv = new WebSocketServer(9001);
     serv.setHandlersPacakgeName("io.github.oxi1224");
       // serv.onMessage(client -> { 

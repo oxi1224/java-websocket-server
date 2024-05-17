@@ -1,9 +1,8 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.messages;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import io.github.oxi1224.websocket.server.ClientSocket;
 import io.github.oxi1224.websocket.shared.util.Pair;
 
 public class HandlerPair extends Pair<Object, Method> {

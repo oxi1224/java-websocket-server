@@ -3,9 +3,9 @@ package io.github.oxi1224.websocket.client;
 import java.io.IOException;
 
 import io.github.oxi1224.websocket.server.ClientSocket;
-import io.github.oxi1224.websocket.shared.DefaultHandlerID;
-import io.github.oxi1224.websocket.shared.Handler;
-import io.github.oxi1224.websocket.shared.MessageHandler;
+import io.github.oxi1224.websocket.messages.DefaultHandlerID;
+import io.github.oxi1224.websocket.messages.Handler;
+import io.github.oxi1224.websocket.messages.MessageHandler;
 
 @Handler(id = DefaultHandlerID.DEFAULT)
 public class EchoHandler implements MessageHandler<ClientSocket> {

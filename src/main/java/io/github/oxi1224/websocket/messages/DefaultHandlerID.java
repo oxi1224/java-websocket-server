@@ -1,4 +1,4 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.messages;
 
 public abstract class DefaultHandlerID {
   public final static String DEFAULT = "";

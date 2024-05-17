@@ -6,9 +6,14 @@ import java.nio.charset.StandardCharsets;
 
 public class DataWriter {
   private OutputStream out;
+  private boolean maskFrames = false;
 
   public DataWriter(OutputStream out) {
     this.out = out;
+  }
+
+  public void setMasking(boolean mask) {
+    maskFrames = mask;
   }
 
   public void write(DataFrame frame) throws IOException {
@@ -31,18 +36,24 @@ public class DataWriter {
   }
 
   public void write(boolean fin, Opcode opcode, byte[] payload) throws IOException {
-    write(fin, false, false, false, opcode, false, payload.length, null, payload);
+    byte[] maskingKey = null;
+    if (maskFrames) maskingKey = DataFrame.genMaskingKey();
+    write(fin, false, false, false, opcode, maskFrames, payload.length, maskingKey, payload);
   }
 
   public void write(boolean fin, Opcode opcode, String payload) throws IOException {
+    byte[] maskingKey = null;
+    if (maskFrames) maskingKey = DataFrame.genMaskingKey();
     byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
-    write(fin, false, false, false, opcode, false, payloadBytes.length, null, payloadBytes);
+    write(fin, false, false, false, opcode, maskFrames, payloadBytes.length, maskingKey, payloadBytes);
   }
 
   public void write(boolean fin, Opcode opcode, String messageID, String payload) throws IOException {
+    byte[] maskingKey = null;
+    if (maskFrames) maskingKey = DataFrame.genMaskingKey();
     String fullPayload = messageID + " " + payload;
     byte[] payloadBytes = fullPayload.getBytes(StandardCharsets.UTF_8);
-    write(fin, true, false, false, opcode, false, payloadBytes.length, null, payloadBytes);
+    write(fin, true, false, false, opcode, maskFrames, payloadBytes.length, maskingKey, payloadBytes);
   }
 
   public void write(byte[] payload) throws IOException {

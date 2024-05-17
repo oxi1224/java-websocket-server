@@ -4,17 +4,16 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.github.oxi1224.websocket.core.DataFrame;
 import io.github.oxi1224.websocket.core.Opcode;
-import io.github.oxi1224.websocket.shared.Handler;
-import io.github.oxi1224.websocket.shared.HandlerPair;
-import io.github.oxi1224.websocket.shared.MessageHandler;
-import io.github.oxi1224.websocket.shared.DefaultHandlerID;
+import io.github.oxi1224.websocket.messages.Handler;
+import io.github.oxi1224.websocket.messages.HandlerPair;
+import io.github.oxi1224.websocket.messages.MessageHandler;
+import io.github.oxi1224.websocket.messages.DefaultHandlerID;
 import io.github.oxi1224.websocket.shared.exceptions.InvalidConfigurationError;
 import io.github.oxi1224.websocket.shared.exceptions.InvalidHandlerError;
 import io.github.oxi1224.websocket.shared.util.ClassScanner;
@@ -53,7 +52,7 @@ public class WebSocketServer extends java.net.ServerSocket {
     normalWebsocket = true;
   }
  
-  public void start() throws IOException, NoSuchAlgorithmException {
+  public void start() throws IOException {
     if (handlersPackageName == null || handlersPackageName.isBlank()) {
       throw new InvalidConfigurationError("handlersPackageName is blank, set it via setHandlersPackageName");
     }
@@ -63,12 +62,7 @@ public class WebSocketServer extends java.net.ServerSocket {
       ClientSocket client = new ClientSocket(this.accept());
       HandlerPair closeHandler = handlers.get(DefaultHandlerID.CLOSE);
       if (closeHandler != null) client.onClose((c) -> closeHandler.invoke(c));
-      try {
-        client.sendHandshake();
-      } catch (InterruptedException e) {
-        client.close();
-        break;
-      }
+      client.sendHandshake();
       client.onClose((c) -> cleanupSocket(c));
       createClientThread(client);
     }

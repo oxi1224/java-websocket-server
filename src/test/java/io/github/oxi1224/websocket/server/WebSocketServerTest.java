@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 
 import io.github.oxi1224.websocket.client.Client;
 import io.github.oxi1224.websocket.core.Opcode;
+import io.github.oxi1224.websocket.shared.exceptions.ConnectionException;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.function.Consumer;
 
 class ConnectTask implements Consumer<Integer> {
@@ -20,8 +20,6 @@ class ConnectTask implements Consumer<Integer> {
       c = new ClientSocket(s.accept());
       c.sendHandshake();
     } catch (IOException e) { e.printStackTrace(); }
-    catch (InterruptedException e) { e.printStackTrace(); }
-    catch (NoSuchAlgorithmException e) { e.printStackTrace(); }
   }
 
   public WebSocketServer getServer() { return this.s; }
@@ -30,7 +28,7 @@ class ConnectTask implements Consumer<Integer> {
 
 class WebSocketServerTest {
   @Test
-  public void testPing() throws IOException, InterruptedException {
+  public void testPing() throws IOException, InterruptedException, ConnectionException {
     ConnectTask c = new ConnectTask();
     Thread t = new Thread(() -> c.accept(8000));
     t.start();
@@ -46,7 +44,7 @@ class WebSocketServerTest {
   }
 
   @Test
-  public void testClose() throws IOException, InterruptedException {
+  public void testClose() throws IOException, InterruptedException, ConnectionException {
     ConnectTask c = new ConnectTask();
     Thread t = new Thread(() -> c.accept(8001));
     t.start();
@@ -62,7 +60,7 @@ class WebSocketServerTest {
   }
 
   @Test
-  public void testMessage() throws IOException, InterruptedException {
+  public void testMessage() throws IOException, InterruptedException, ConnectionException {
     ConnectTask c = new ConnectTask();
     Thread t = new Thread(() -> c.accept(8002));
     t.start();

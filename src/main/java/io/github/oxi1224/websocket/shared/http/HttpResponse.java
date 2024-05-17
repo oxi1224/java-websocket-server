@@ -27,6 +27,9 @@ public class HttpResponse {
     this.statusMessage = statusMessage;
     this.headers = headers;
     this.body = body;
+    if (!this.body.isBlank() && !this.headers.containsKey("Content-Length")) {
+      this.headers.put(new HeaderMap.HeaderPair("Content-Length", Integer.toString(body.length())));
+    }
   }
 
   public static HttpResponse parse(InputStream stream) throws IllegalArgumentException, IOException {
@@ -97,7 +100,7 @@ public class HttpResponse {
   }
 
   public List<String> getHeader(String key) { return headers.get(key); }
-  public String getFirstValue(String key) { return headers.getFirstValue(key); }
+  public String getFirstHeaderValue(String key) { return headers.getFirstValue(key); }
   public String getVersion() { return version; }
   public int getStatusCode() { return statusCode; }
   public String getStatusMessage() { return statusMessage; }

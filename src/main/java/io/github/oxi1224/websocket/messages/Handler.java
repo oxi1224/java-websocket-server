@@ -1,4 +1,4 @@
-package io.github.oxi1224.websocket.shared;
+package io.github.oxi1224.websocket.messages;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
