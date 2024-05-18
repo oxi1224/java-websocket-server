@@ -3,6 +3,10 @@ package io.github.oxi1224.websocket.core;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * A class representing a single WebSocket data frame
+ * @see <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers#exchanging_data_frames">Websocket data frame</a>
+ */
 public class DataFrame {
   private boolean fin;
   private boolean rsv1;
@@ -37,6 +41,9 @@ public class DataFrame {
     this.payload = payload;
   }
   
+  /**
+   * Transforms the entire class into a byte[]
+   */
   public byte[] getBytes() {
     int calcLength = 2 + payloadLength; // 2 = min len;
     if (payloadLength <= 65535 && payloadLength > 125) calcLength += 3; // 1 byte + next 2
@@ -93,7 +100,10 @@ public class DataFrame {
     }
     return out;
   }
-
+  
+  /**
+   * Parses a DataFrame class from an {@link java.io.InputStream}
+   */
   public static DataFrame read(InputStream in) throws IOException {
     byte b = (byte)(in.read()); 
     boolean fin = (b & 0x80) != 0;
@@ -129,7 +139,11 @@ public class DataFrame {
     }
     return new DataFrame(fin, rsv1, rsv2, rsv3, opcode, mask, payloadLength, maskingKey, payload);
   };
-
+  
+  /**
+   * Generates a random masking key
+   * @return the key
+   */
   public static byte[] genMaskingKey() {
     byte[] mask = new byte[4];
     for (int i = 0; i < 4; i++) {

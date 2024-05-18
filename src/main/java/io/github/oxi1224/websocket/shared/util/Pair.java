@@ -1,5 +1,10 @@
 package io.github.oxi1224.websocket.shared.util;
 
+/**
+ * Utility class for pairing two values together
+ * @param K - the type of the key
+ * @param V - the type of the value
+ */
 public class Pair<K, V> {
   private K key;
   private V val;

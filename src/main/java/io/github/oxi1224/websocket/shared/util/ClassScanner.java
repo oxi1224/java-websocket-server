@@ -10,7 +10,16 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+/**
+ * Contains differnet methods used for scanning classes accross the project
+ */
 public class ClassScanner {
+  /**
+   * Finds and returns all classes with the given annotation
+   * @param annotation - The annotation to search for
+   * @param packageName - The package to search
+   * @return all found classes
+   */
   public static List<Class<?>> findAllWithAnnotation(Class<? extends Annotation> annotation, String packageName) {
     List<Class<?>> withAnnotation = new ArrayList<>();
     try {
@@ -24,6 +33,12 @@ public class ClassScanner {
     return withAnnotation;
   }
   
+  /**
+   * Determines how the program is run and calls the correct findClasses method
+   * Supports running via .class and .jar
+   * @param packageName - The package to search
+   * @return all found classes
+   */
   public static List<Class<?>> getClasses(String packageName) throws IOException, ClassNotFoundException {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     String resourcePath = packageName.replace(".", "/");  
@@ -42,7 +57,12 @@ public class ClassScanner {
     }
     return classes;
   }
-
+  
+  /**
+   * If the program is run via .jar finds all classes in a package
+   * @param packageName - The package to search
+   * @return all found classes
+   */
   private static List<Class<?>> findClasses(JarFile dir, String packageName) throws ClassNotFoundException {
     List<Class<?>> classes = new ArrayList<>();
     Enumeration<JarEntry> entries = dir.entries();
@@ -56,6 +76,11 @@ public class ClassScanner {
     return classes;
   }
 
+  /**
+   * If the program is run via .class finds all classes in a package
+   * @param packageName - The package to search
+   * @return all found classes
+   */
   private static List<Class<?>> findClasses(File dir, String packageName) throws ClassNotFoundException {
     List<Class<?>> classes = new ArrayList<>();
     if (!dir.exists()) return classes;

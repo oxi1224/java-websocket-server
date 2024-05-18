@@ -14,7 +14,7 @@ public class HttpRequest {
   private String version;
   private HeaderMap headers;
   private String body;
-
+  
   public HttpRequest(
     String method,
     String path,
@@ -31,7 +31,12 @@ public class HttpRequest {
       this.headers.put(new HeaderMap.HeaderPair("Content-Length", Integer.toString(body.length())));
     }
   }
-
+  
+  /**
+   * Reads an HTTP Request from an {@link java.io.InputStream}
+   * Note: The entire data first has to be in the stream
+   * @return the parsed http request
+   */
   public static HttpRequest parse(InputStream stream) throws IllegalArgumentException, IOException {
     byte[] buff = new byte[stream.available()];
     stream.readNBytes(buff, 0, stream.available());
@@ -76,7 +81,11 @@ public class HttpRequest {
     s.close();
     return new HttpRequest(method, path, version, headers, body);
   }
-
+  
+  /**
+   * Converts the class into a valid string representation
+   * @return the converted string
+   */
   public String toString() {
     String out = "";
     out += String.format("%s %s HTTP/%s\r\n", method, path, version);
@@ -92,12 +101,21 @@ public class HttpRequest {
     if (!body.isBlank()) out += body;
     return out;
   }
-
+  
+  /**
+   * Converts the class into a byte[]
+   * @return the converted data
+   */
   public byte[] getBytes() {
     return toString().getBytes();
   }
 
   public List<String> getHeader(String key) { return headers.get(key); }
+  /**
+   * Gets the first value of the specified header
+   * @param key - the header name
+   * @return the first value of header
+   */
   public String getFirstHeaderValue(String key) { return headers.getFirstValue(key); }
   public String getMethod() { return method; }
   public String getPath() { return path; }

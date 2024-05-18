@@ -41,6 +41,7 @@ import io.github.oxi1224.websocket.shared.http.HttpResponse;
 import io.github.oxi1224.websocket.shared.util.ClassScanner;
 
 public class Client extends DataWriter {
+  /** Whether or not to use regular websockets (no message identification) */
   public static boolean normalWebsocket = false;
   private final Socket socket;
   private final InputStream in;
@@ -48,7 +49,14 @@ public class Client extends DataWriter {
   private Timer timer;
   private String handlersPackageName;
   private HashMap<String, HandlerPair> handlers = new HashMap<String, HandlerPair>();
-
+  
+  /**
+   * Automatically performs the websocket handshake
+   * @param socket - java socket, required for IO streams
+   * @param origin - origin to use in the websocket handshake
+   * @exception ConnectionException if receives a non 101 response or invalid Sec-WebSocket-Accept
+   * @see <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSocket">WebSocket - MDN web docs</a>
+   */
   private Client(Socket socket, String origin) throws IOException, ConnectionException {
     super(socket.getOutputStream());
     setMasking(true);
@@ -103,18 +111,27 @@ public class Client extends DataWriter {
     }
     reader = new DataReader(new BufferedInputStream(in));
   }
-
+  
+  /**
+   * @param url - any valid string that can be converted to a {@link java.net.URI}
+   * @return a connected Client class
+   */
   public static Client connect(String url) throws IOException, URISyntaxException, ConnectionException {
     URI uri = new URI(url);
     String host = uri.getHost();
     int port = uri.getPort() == -1 ? 80 : uri.getPort();
     return new Client(new Socket(host, port), "http://" + url);
   }
-
+  
+  /**
+   * @param host - IP address poiting to the host
+   * @param port - port of the server
+   * @return a connected Client class
+   */
   public static Client connect(String host, int port) throws IOException, ConnectionException {
     return new Client(new Socket(host, port), "http://" + host); 
   }
-
+  
   public static Client connect(
     String host,
     int port,
@@ -123,15 +140,27 @@ public class Client extends DataWriter {
   ) throws IOException, ConnectionException {
     return new Client(new Socket(host, port, localAddr, localPort), "http://" + host);
   }
- 
+
+  /**
+   * Forces the client into using standard WebSocket (no message identification)
+   */
   public static void useNormalWebsocket() {
     normalWebsocket = true;
   }
-
-  public void setHandlersPacakgeName(String packageName) {
+  
+  /**
+   * Sets the package name where all message handlers are located
+   * The handlers must have an @Handler annotation and must extend MessageHandler
+   * @see io.github.oxi1224.websocket.messages.MessageHandler
+   * @see io.github.oxi1224.websocket.messages.handler
+   */
+  public void setHandlersPackageName(String packageName) {
     handlersPackageName = packageName;
   }
-
+  
+  /**
+   * Collects all handlers extending MessageHandler with @Handler annotation
+   */
   private void collectHandlers() {
     List<Class<?>> found = ClassScanner.findAllWithAnnotation(Handler.class, handlersPackageName);
     for (Class<?> c : found) {
@@ -158,7 +187,11 @@ public class Client extends DataWriter {
       }
     }
   }
-
+  
+  /**
+   * Reads data until it receives a frame with FIN = 1
+   * Handles incoming PING and CLOSE frames
+   */
   public void read() throws IOException {
     try {
       reader.read();
@@ -172,7 +205,11 @@ public class Client extends DataWriter {
     if (opcode == Opcode.PING) pong(reader.getBytePayload());
     if (opcode == Opcode.CLOSE) onReceiveClose(refFrame);
   }
-
+  
+  /**
+   * Sends a ping frame to the server, waits 10s before timing out
+   * and closing the connection
+   */
   public void pingServer() throws IOException {
     write(true, Opcode.PING, new byte[0]);
     startTimeoutTimer(10000);
@@ -191,7 +228,12 @@ public class Client extends DataWriter {
       handlers.get(DefaultHandlerID.PONG).invoke(this);
     }
   }
-
+  
+  /**
+   * Pongs are handled automatically
+   *
+   * Sends a pong frame to the server
+   */
   public void pong(byte[] payload) throws IOException {
     write(true, Opcode.PONG, payload);
     if (handlers.containsKey(DefaultHandlerID.PING)) {
@@ -199,6 +241,9 @@ public class Client extends DataWriter {
     }
   }
 
+  /**
+   * Starts the closing procedure, awaits for a response otherwise closes after 10s
+   */
   public void close() throws IOException {
     write(true, Opcode.CLOSE, new byte[0]);
     startTimeoutTimer(10000);
@@ -212,8 +257,15 @@ public class Client extends DataWriter {
       socket.close();
     } catch (IOException e) {}
   }
-
+  
+  /**
+   * Starts the closing procedure, awaits for a response otherwise closes after 10s
+   * @param statusCode - A status code from {@link io.github.oxi1224.websocket.core.StatusCode}
+   * @param reason - The reason for closure
+   */
   public void close(StatusCode statusCode, String reason) throws IOException {
+    // Included in the RFC, 123 because statusCode always takes 2 bytes
+    if (reason.length() > 123) throw new IOException("Payload length may not be over 125 in a control frame");
     byte[] stringBytes = reason.getBytes();
     byte[] codeBytes = statusCode.getBytes();
     byte[] payload = new byte[2 + stringBytes.length];
@@ -234,7 +286,10 @@ public class Client extends DataWriter {
     write(frame);
     socket.close();
   }
-
+  
+  /**
+   * Starts the timeout timer which will close the connection after delay
+   */
   private void startTimeoutTimer(long delay) {
     timer = new Timer();
     timer.schedule(new TimerTask() {
@@ -250,7 +305,10 @@ public class Client extends DataWriter {
       }
     }, delay); 
   }
-
+  
+  /**
+   * Calls collectHandlers() and starts the main loop
+   */
   public void listen() {
     if (handlersPackageName == null || handlersPackageName.isBlank()) {
       throw new InvalidConfigurationError("handlersPackageName is blank, set it via setHandlersPackageName");
@@ -275,7 +333,11 @@ public class Client extends DataWriter {
       }
     }
   }
-
+  
+  /**
+   * Generates a random Sec-WebSocket-Key 
+   * @return the generated key
+   */
   public static String generateKey() {
     byte[] key = new byte[16];
     SecureRandom random = new SecureRandom();
@@ -286,6 +348,9 @@ public class Client extends DataWriter {
   public byte[] getBytePayload() { return this.reader.getBytePayload(); }
   public String getPayload() { return this.reader.getPayload(); }
   public String getPayload(Charset chrset) { return this.reader.getPayload(chrset); }
+  /**
+   * @return the first frame of entire payload
+   */
   public DataFrame getPayloadStartFrame() { return this.reader.getStartFrame(); }
   public ArrayList<DataFrame> getPayloadFrames() { return this.reader.getFrameStream(); }
   public boolean isConnected() { return this.socket.isConnected(); }

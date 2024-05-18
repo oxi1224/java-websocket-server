@@ -31,7 +31,12 @@ public class HttpResponse {
       this.headers.put(new HeaderMap.HeaderPair("Content-Length", Integer.toString(body.length())));
     }
   }
-
+  
+  /**
+   * Reads an HTTP response from an {@link java.io.InputStream}
+   * Note: The entire data first has to be in the stream
+   * @return the parsed http response 
+   */
   public static HttpResponse parse(InputStream stream) throws IllegalArgumentException, IOException {
     byte[] buff = new byte[stream.available()];
     stream.readNBytes(buff, 0, stream.available());
@@ -78,7 +83,11 @@ public class HttpResponse {
     s.close();
     return new HttpResponse(version, statusCode, statusMessage, headers, body);
   }
-
+  
+  /**
+   * Converts the class into a valid string representation
+   * @return the converted string
+   */
   public String toString() {
     String out = "";
     out += String.format("HTTP/%s %s %s\r\n", version, statusCode, statusMessage);
@@ -94,12 +103,21 @@ public class HttpResponse {
     if (!body.isBlank()) out += body;
     return out;
   }
-
+  
+  /**
+   * Converts the class into a byte[]
+   * @return the converted data
+   */
   public byte[] getBytes() {
     return toString().getBytes();
   }
 
   public List<String> getHeader(String key) { return headers.get(key); }
+  /**
+   * Gets the first value of the specified header
+   * @param key - the header name
+   * @return the first value of header
+   */
   public String getFirstHeaderValue(String key) { return headers.getFirstValue(key); }
   public String getVersion() { return version; }
   public int getStatusCode() { return statusCode; }

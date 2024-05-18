@@ -32,6 +32,7 @@ public class ClientSocket extends DataWriter {
   private final InputStream in;
   private final OutputStream out;
   private final DataReader reader;
+  /** Whether or not to use regular websockets (no message identification) */
   private boolean normalWebsocket = true;
   private Timer timer;
   private Consumer<ClientSocket> onCloseCallback;
@@ -43,11 +44,17 @@ public class ClientSocket extends DataWriter {
     out = sock.getOutputStream();
     reader = new DataReader(in);
   }
-
+  
+  /**
+   * Forces the client into using regular WebSocket (no message identification)
+   */
   public void useNormalWebsocket() {
     normalWebsocket = true;
   }
-
+  
+  /**
+   * Handles the incoming handshake from a client
+   */
   public void sendHandshake() throws IOException {
      while (in.available() == 0) {
       try {
@@ -106,7 +113,7 @@ public class ClientSocket extends DataWriter {
     byte[] outbuf = res.getBytes();
     out.write(outbuf, 0, outbuf.length);
   }
-
+  
   private void httpClose(HttpResponse res) throws IOException {
     byte[] outbuf = res.getBytes();
     out.write(outbuf, 0, outbuf.length);
@@ -114,6 +121,10 @@ public class ClientSocket extends DataWriter {
     if (onCloseCallback != null) onCloseCallback.accept(this);
   }
 
+  /**
+   * Reads data until it receives a frame with FIN = 1
+   * Handles incoming PING and CLOSE frames
+   */ 
   public void read() throws IOException {
     try {
       reader.read();
@@ -127,7 +138,11 @@ public class ClientSocket extends DataWriter {
     if (opcode == Opcode.PING) pong(reader.getBytePayload());
     if (opcode == Opcode.CLOSE) closeWithoutWait();
   }
-
+  
+  /**
+   * Sends a ping frame to the server, waits 10s before timing out
+   * and closing the connection
+   */
   public void ping() throws IOException {
     write(true, Opcode.PING, new byte[0]);
     startTimeoutTimer(10000);
@@ -142,12 +157,19 @@ public class ClientSocket extends DataWriter {
       close();
     }
   }
-
+  
+  /**
+   * Pongs are handled automatically
+   *
+   * Sends a pong frame to the server
+   */
   public void pong(byte[] pingPayload) throws IOException {
     write(true, Opcode.PONG, pingPayload);
   }
-
-
+  
+  /**
+   * Starts the closing procedure, awaits for a response otherwise closes after 10s
+   */
   public void close() throws IOException {
     write(true, Opcode.CLOSE, new byte[0]);
     startTimeoutTimer(10000);
@@ -164,7 +186,12 @@ public class ClientSocket extends DataWriter {
     }
     timer.cancel();
   }
-
+  
+  /**
+   * Starts the closing procedure, awaits for a response otherwise closes after 10s
+   * @param statusCode - A status code from {@link io.github.oxi1224.websocket.core.StatusCode}
+   * @param reason - The reason for closure
+   */
   public void close(StatusCode statusCode, String reason) throws IOException {
     byte[] stringBytes = reason.getBytes();
     byte[] codeBytes = statusCode.getBytes();
@@ -186,13 +213,19 @@ public class ClientSocket extends DataWriter {
     }
     timer.cancel();
   }
-
+  
+  /**
+   * Closes the connection without waiting for acknowledgment
+   */
   private void closeWithoutWait() throws IOException {
     write(true, Opcode.CLOSE, new byte[0]);
     socket.close();
     if (onCloseCallback != null) onCloseCallback.accept(this);
   }
-
+  
+  /**
+   * Starts the timeout timer which will close the connection after delay
+   */
   private void startTimeoutTimer(long delay) {
     timer = new Timer();
     timer.schedule(new TimerTask() {

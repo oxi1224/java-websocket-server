@@ -1,6 +1,11 @@
 package io.github.oxi1224.websocket.messages;
 
-public abstract class DefaultHandlerID {
+/**
+ * Class containing all default IDs for handlers
+ * @see io.github.oxi1224.websocket.messages.Handler
+ * @see io.github.oxi1224.websocket.messages.MessageHandler
+ */
+public final class DefaultHandlerID {
   public final static String DEFAULT = "";
   public final static String CONNECT = "connect";
   public final static String PING = "ping";

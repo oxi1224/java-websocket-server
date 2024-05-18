@@ -46,7 +46,7 @@ class ClientTest {
   public static void startServerThread(WebSocketServer srv) {
     Thread t = new Thread(() -> {
       try {
-        srv.setHandlersPacakgeName("io.github.oxi1224.websocket.client");
+        srv.setHandlersPackageName("io.github.oxi1224.websocket.client");
         srv.start();
       } catch (IOException e) {
         e.printStackTrace();

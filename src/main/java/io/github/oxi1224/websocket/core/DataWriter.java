@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Utility class containing multiple, valid overloads of write()
+ */
 public class DataWriter {
   private OutputStream out;
   private boolean maskFrames = false;
@@ -11,7 +14,11 @@ public class DataWriter {
   public DataWriter(OutputStream out) {
     this.out = out;
   }
-
+  
+  /**
+   * Sets wheter or not the writer should by default mask frames
+   * @param mask - What to set masking to
+   */
   public void setMasking(boolean mask) {
     maskFrames = mask;
   }
@@ -47,7 +54,10 @@ public class DataWriter {
     byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
     write(fin, false, false, false, opcode, maskFrames, payloadBytes.length, maskingKey, payloadBytes);
   }
-
+  
+  /**
+   * Includes an additional messageID parameter when using message identification
+   */
   public void write(boolean fin, Opcode opcode, String messageID, String payload) throws IOException {
     byte[] maskingKey = null;
     if (maskFrames) maskingKey = DataFrame.genMaskingKey();
@@ -64,6 +74,9 @@ public class DataWriter {
     write(true, Opcode.TEXT, payload);
   }
 
+  /**
+   * Includes an additional messageID parameter when using message identification
+   */
   public void write(String messageID, String payload) throws IOException {
     write(true, Opcode.TEXT, messageID, payload);
   }
