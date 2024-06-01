@@ -2,6 +2,7 @@ package io.github.oxi1224.websocket.json;
 
 import java.util.LinkedHashMap;
 
+/// TODO: Implement this, maybe implement a better way at distinguishing values e.g JSONArray, JSONValue
 public class JSONObject {
   public LinkedHashMap<String, Object> data = new LinkedHashMap<>();
   

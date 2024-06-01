@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 class ParserTest {
-  @Test public void testParsing() throws NumberFormatException {
+  @Test public void testParsing() throws NumberFormatException, JSONException {
     JSONObject out = JSONParser.parse(
 """
 {
@@ -23,13 +23,13 @@ class ParserTest {
   "object": {
     "sub-string": "string",
     "sub-boolean": true,
-    "sub-array": ["sub-array-string", true]
+    "sub-array": ["sub-array-string", true],
   },
   "object-array": [
     { "key": 0 },
     { "key": 1 },
-    { "key": 2 },
-  ]
+    { "key": 2 }
+  ],
 }
 """
     );
