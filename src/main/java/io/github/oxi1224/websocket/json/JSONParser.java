@@ -1,9 +1,5 @@
 package io.github.oxi1224.websocket.json;
 
-import java.util.ArrayList;
-import java.util.List;
-/// TODO: STRING TO JSON, STRING SERIALIZATION
-
 /**
  * A utility class for parsing JSON strings into {@link JSONObject} objects.
  * This class performs JSON validation and throws appropriate errors when standards are not met.
@@ -51,7 +47,7 @@ public class JSONParser {
           break;
       }
       if (tok.peek() == ',') c = tok.next();
-      out.set(key, value);
+      out.set(key, new JSONValue(value));
     }
     return out;
   }
@@ -77,8 +73,8 @@ public class JSONParser {
    * @throws JSONException if the parser encounters a problem with the array during parsing
    * @see JSONTokenizer
    */
-  private static List<Object> parseArray(JSONTokenizer tok) throws NumberFormatException, JSONException {
-    List<Object> out = new ArrayList<>();
+  private static JSONValue.Array parseArray(JSONTokenizer tok) throws NumberFormatException, JSONException {
+    JSONValue.Array out = new JSONValue.Array();
     tok.next();
     while (true) {
       Object value = null;
@@ -101,7 +97,7 @@ public class JSONParser {
           value = tok.parseUnquoted(tok.nextUntil(",]"));
           break;
       }
-      out.add(value);
+      out.add(new JSONValue(value));
       char peeked = tok.peekNextClean();
       if (peeked == ',') {
         tok.nextClean();

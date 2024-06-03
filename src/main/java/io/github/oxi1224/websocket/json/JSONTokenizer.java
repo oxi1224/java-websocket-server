@@ -249,7 +249,7 @@ public class JSONTokenizer {
   public Object parseUnquoted(String str) throws NumberFormatException, JSONException {
     if (str.equals("false")) return Boolean.FALSE;
     if (str.equals("true")) return Boolean.TRUE;
-    if (str.equals("null")) return null;
+    if (str.equals("null")) return new JSONValue.Null(); // has to be new instance or .toString() wont work
     
     char first = str.charAt(0);
     if (!str.matches(NUMBER_REGEX)) throw new JSONException("Unknown unquoted value", line, pos, str);
