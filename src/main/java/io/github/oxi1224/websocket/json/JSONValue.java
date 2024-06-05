@@ -109,7 +109,11 @@ public class JSONValue {
   public Object getValue() {
     return this.value instanceof Null ? null : this.value;
   }
-  
+
+  public boolean castableTo(Class<?> type) {
+    return type.isInstance(this.value);
+  }
+
   @Override
   public String toString() {
     return this.value.toString();

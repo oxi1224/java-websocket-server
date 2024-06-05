@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Iterator;
+
 class ParserTest {
   @Test public void testParsing() throws NumberFormatException, JSONException {
     JSONObject out = JSONParser.parse(
@@ -54,6 +56,93 @@ class ParserTest {
       JSONObject obj = objectArray.get(i, JSONObject.class);
       int key = obj.get("key", Integer.class);
       assertEquals(i, key);
+    }
+  }
+
+  @Test public void testTodo() throws JSONException {
+    JSONObject obj = JSONParser.parse(
+"""
+{
+  "todos": [
+    {
+      "id": 1,
+      "todo": "Do something nice for someone you care about",
+      "completed": false,
+      "userId": 152
+    },
+    {
+      "id": 2,
+      "todo": "Memorize a poem",
+      "completed": true,
+      "userId": 13
+    },
+    {
+      "id": 3,
+      "todo": "Watch a classic movie",
+      "completed": true,
+      "userId": 68
+    }
+  ],
+  "total": 254,
+  "skip": 0,
+  "limit": 3
+}
+""");
+    JSONValue.Array array = obj.get("todos", JSONValue.Array.class);
+    int i = 1;
+    for (JSONValue v : array) {
+      if (v.castableTo(JSONObject.class)) {
+        JSONObject jObj = v.getValue(JSONObject.class);
+        assertEquals(i, jObj.get("id", Integer.class));
+        i++;
+      } else {
+        throw new JSONException("v should be castable to JSONObject");
+      }
+    }
+    assertEquals(254, obj.get("total", Integer.class));
+    assertEquals(0, obj.get("skip", Integer.class));
+  }
+
+  @Test public void testIterator() throws JSONException {
+    String[] expectedKeys = new String[]{ "key-one", "key-two", "key-three", "key-four" };
+    String[] expectedValues = new String[]{ "value-one", "value-two", "value-three", "value-four" };
+    JSONObject obj = JSONParser.parse(
+"""
+{
+  "key-one": "value-one",
+  "key-two": "value-two",
+  "key-three": "value-three",
+  "key-four": "value-four",
+}
+"""
+    );
+
+    int i = 0;
+    for (JSONPair p : obj) {
+      JSONValue v = p.getValue();
+      if (v.castableTo(String.class)) {
+        String str = v.getValue(String.class);
+        assertEquals(expectedKeys[i], p.getKey());
+        assertEquals(expectedValues[i], str);
+      } else {
+        throw new JSONException("v should be castable to String");
+      }
+      i++;
+    }
+
+    i = 0;
+    Iterator<JSONPair> iter = obj.iterator();
+    while (iter.hasNext()) {
+      JSONPair p = iter.next();
+      JSONValue v = p.getValue();
+      if (v.castableTo(String.class)) {
+        String str = v.getValue(String.class);
+        assertEquals(expectedKeys[i], p.getKey());
+        assertEquals(expectedValues[i], str);
+      } else {
+        throw new JSONException("v should be castable to String");
+      }
+      i++;
     }
   }
 }

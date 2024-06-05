@@ -1,9 +1,31 @@
 package io.github.oxi1224.websocket.json;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
-public class JSONObject {
-  public LinkedHashMap<String, JSONValue> data = new LinkedHashMap<>();
+
+public class JSONObject implements Iterable<JSONPair> {
+  public static class JSONIterator implements Iterator<JSONPair> {
+    private Iterator<Map.Entry<String, JSONValue>> iter;
+
+    public JSONIterator(JSONObject obj) {
+      iter = obj.data.entrySet().iterator();
+    }
+
+    @Override
+    public boolean hasNext() {
+      return iter.hasNext();
+    }
+
+    @Override
+    public JSONPair next() {
+      Map.Entry<String, JSONValue> entry = iter.next();
+      return new JSONPair(entry.getKey(), entry.getValue());
+    }
+  }
+
+  private LinkedHashMap<String, JSONValue> data = new LinkedHashMap<>();
   
   public JSONObject() {}
 
@@ -54,5 +76,9 @@ public class JSONObject {
     } catch (ClassCastException e) {
       throw new JSONException("Failed to cast value to " + castType.getName());
     }
+  }
+    
+  public Iterator<JSONPair> iterator() {
+    return new JSONIterator(this);
   }
 }
