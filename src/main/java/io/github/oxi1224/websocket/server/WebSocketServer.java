@@ -20,7 +20,7 @@ import io.github.oxi1224.websocket.shared.util.ClassScanner;
 
 public class WebSocketServer extends java.net.ServerSocket {
   public Map<ClientSocket, Thread> clients = new HashMap<>();
-  public Map<String, HandlerPair> handlers = new HashMap<String, HandlerPair>();
+  public Map<String, HandlerPair> handlers = new HashMap<>();
   private String handlersPackageName;
   /** Whether to use regular websockets (no message identification) */
   private boolean normalWebsocket = false;
@@ -40,8 +40,8 @@ public class WebSocketServer extends java.net.ServerSocket {
   /**
    * Sets the package name where all message handlers are located
    * The handlers must have an @Handler annotation and must extend MessageHandler
-   * @see io.github.oxi1224.websocket.messages.MessageHandler
-   * @see io.github.oxi1224.websocket.messages.Handler
+   * @see MessageHandler
+   * @see Handler
    */
   public void setHandlersPackageName(String name) {
     handlersPackageName = name;

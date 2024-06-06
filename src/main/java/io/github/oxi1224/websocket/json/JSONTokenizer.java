@@ -20,14 +20,36 @@ import java.math.BigInteger;
  * @see JSONObject
  */
 public class JSONTokenizer {
+  /** Regex for all valid JSON number representations */
+  public static final String NUMBER_REGEX = "-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?";
   private final Reader reader;
+
+  /** If true, there is no more data in reader */
   public boolean end = false;
-  private int previous;
-  private int pos = 1;
+
+  /** The previously consumd character */
+  public char previous;
+
+  /** The last consumed character */
+  public char current;
+
+  /** Position in line of the last consumed character */
+  private int pos = 0;
+
+  /** Line of the last consumed character */
   private int line = 1;
+
+  /** The length of the input string, used for peekNextClean */
   private int len;
 
-  public static final String NUMBER_REGEX = "-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?";
+  /** Toggles if getLine() and getPos() should return the last peeked position (used for errors) */
+  private boolean usePeekedPos = false;
+
+  /** Position of the last peeked character */
+  private int peekedPos;
+
+  /** Line of the last peeked character */
+  private int peekedLine;
 
   /**
    * @param in - The JSON string. NOT VALIDATED
@@ -42,9 +64,10 @@ public class JSONTokenizer {
    * @return The read character
    */
   public char next() {
-    int c = 0;
+    usePeekedPos = false; // next() is only called when manipulating the actual position
+    char c = 0;
     try {
-      c = reader.read();
+      c = (char)reader.read();
     } catch (IOException e) {
       end = true;
       e.printStackTrace();
@@ -54,15 +77,10 @@ public class JSONTokenizer {
       end = true;
       return 0;
     }
-
-    if (c == '\n' || (c == '\r' && previous != '\n')) {
-      line++;
-      pos = 1;
-    } else {
-      pos++;
-    }
-    previous = c;
-    return (char)previous;
+    incrementCounters(c);    
+    previous = current;
+    current = c;
+    return current;
   }
   
   /**
@@ -84,15 +102,11 @@ public class JSONTokenizer {
    * @return The first non-whitespace character
    */
   public char nextClean() {
-    char c = next();
-    switch (c) {
-      case '\r':
-      case '\n':
-      case ' ':
-        return nextClean();
-      default:
-        return c;
-    }
+    char c;
+    do {
+      c = next();
+    } while (c == '\r' || c == '\n' || c == ' ');
+    return c;
   }
   
   /**
@@ -100,10 +114,14 @@ public class JSONTokenizer {
    * @return The next character in line
    */
   public char peek() {
+    usePeekedPos = true;
+    peekedPos = pos;
+    peekedLine = line;
     char c = 0;
     try {
       reader.mark(1);
-      c = next();
+      c = (char)reader.read();
+      incrementCounters(c);
       reader.reset();
     } catch (IOException e) {
       e.printStackTrace();
@@ -116,15 +134,20 @@ public class JSONTokenizer {
    * @return The first non-whitespace character in line
    */
   public char peekNextClean() {
+    usePeekedPos = true;
+    peekedPos = pos;
+    peekedLine = line;
     try {
       reader.mark(len);
       char c = (char)reader.read();
+      incrementCounters(c);
       while (true) {
         switch(c) {
           case '\r':
           case '\n':
           case ' ':
             c = (char)reader.read();
+            incrementCounters(c);
             break;
           default:
             reader.reset();
@@ -144,11 +167,11 @@ public class JSONTokenizer {
    */
   public String nextUntil(char delim) {
     StringBuilder sb = new StringBuilder();
-    char c = 0;
-    while (c != delim) {
+    char c;
+    do {
       c = next();
       sb.append(c);
-    }
+    } while (c != delim);
     return sb.toString().trim();
   }
   
@@ -159,30 +182,14 @@ public class JSONTokenizer {
    */
   public String nextUntil(String delims) {
     StringBuilder sb = new StringBuilder();
-    char c = next();
-    sb.append(c);
-    while (!(delims.indexOf(peek()) >= 0)) {
+    char c;
+    while (delims.indexOf(peek()) < 0) {
       c = next();
       sb.append(c);
     }
     return sb.toString().trim();
   }
   
-  /**
-   * Reads characters until any is read that matches the regex
-   * @param regex - The regex the character has to match
-   * @return All characters before reading a matching one
-   */
-  public String nextUntilRegex(String regex) {
-    StringBuilder sb = new StringBuilder();
-    char c;
-    while (!(String.valueOf(peek()).matches(regex))) {
-      c = next();
-      sb.append(c);
-    }
-    return sb.toString().trim();
-  }
-
   /**
    * Reads a JSON string (text within double quotes)
    * <p>The last consumed character has to be the opening quote</p>
@@ -228,7 +235,7 @@ public class JSONTokenizer {
               sb.append((char)Integer.parseInt(next, 16));
               break;
             default:
-            throw new JSONException("Invalid escape sequence", line, pos);
+              throw new JSONException("Invalid escape sequence", line, pos);
           }
           break;
         default:
@@ -296,6 +303,24 @@ public class JSONTokenizer {
     }
   }
 
-  public int getPos() { return this.pos; }
-  public int getLine() { return this.line; }
+  private void incrementCounters(char c) {
+    if (!usePeekedPos) {
+      if (c == '\n' || (c == '\r' && previous != '\n')) {
+        line++;
+        pos = 0;
+      } else {
+        pos++;
+      }
+    } else {
+      if (c == '\n' || (c == '\r' && previous != '\n')) {
+        peekedLine++;
+        peekedPos = 0;
+      } else {
+        peekedPos++;
+      }
+    }
+  }
+
+  public int getPos() { return this.usePeekedPos ? this.peekedPos : this.pos; }
+  public int getLine() { return this.usePeekedPos ? this.peekedLine : this.line; }
 }

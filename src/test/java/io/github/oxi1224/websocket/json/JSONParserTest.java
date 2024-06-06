@@ -57,10 +57,8 @@ class ParserTest {
       int key = obj.get("key", Integer.class);
       assertEquals(i, key);
     }
-  }
 
-  @Test public void testTodo() throws JSONException {
-    JSONObject obj = JSONParser.parse(
+    JSONObject todoObj = JSONParser.parse(
 """
 {
   "todos": [
@@ -88,7 +86,7 @@ class ParserTest {
   "limit": 3
 }
 """);
-    JSONValue.Array array = obj.get("todos", JSONValue.Array.class);
+    JSONValue.Array array = todoObj.get("todos", JSONValue.Array.class);
     int i = 1;
     for (JSONValue v : array) {
       if (v.castableTo(JSONObject.class)) {
@@ -99,8 +97,8 @@ class ParserTest {
         throw new JSONException("v should be castable to JSONObject");
       }
     }
-    assertEquals(254, obj.get("total", Integer.class));
-    assertEquals(0, obj.get("skip", Integer.class));
+    assertEquals(254, todoObj.get("total", Integer.class));
+    assertEquals(0, todoObj.get("skip", Integer.class));
   }
 
   @Test public void testIterator() throws JSONException {
@@ -112,7 +110,7 @@ class ParserTest {
   "key-one": "value-one",
   "key-two": "value-two",
   "key-three": "value-three",
-  "key-four": "value-four",
+  "key-four": "value-four"
 }
 """
     );
@@ -145,5 +143,13 @@ class ParserTest {
       i++;
     }
   }
-}
 
+  @Test void testToString() throws JSONException {
+    String stringJSON =
+"""
+{"todos":[{"id":1,"todo":"Do something nice for someone you care about","completed":false,"userId":152},{"id":2,"todo":"Memorize a poem","completed":true,"userId":13}],"total":254,"skip":0,"limit":3}
+""".trim();
+    JSONObject obj = JSONParser.parse(stringJSON);
+    assertEquals(stringJSON, obj.toString());
+  }
+}

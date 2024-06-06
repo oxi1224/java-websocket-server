@@ -142,7 +142,6 @@ public class DataFrame {
   
   /**
    * Generates a random masking key
-   * @return the key
    */
   public static byte[] genMaskingKey() {
     byte[] mask = new byte[4];

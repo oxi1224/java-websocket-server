@@ -21,19 +21,24 @@ public class JSONParser {
    */
   public static JSONObject parse(JSONTokenizer tok) throws NumberFormatException, JSONException {
     JSONObject out = new JSONObject();
-    char c = tok.next();
-    if (c != '{') throw new JSONException("JSON object does not start with a \"{\"");
+    if (tok.current != '{') throw new JSONException("JSON object does not start with a \"{\"");
+    char c;
     while (!tok.end) {
       c = tok.nextClean();
-      if (c == '}') break;
+      if (c == ',') {
+        if (tok.peekNextClean() == '}') {
+          throw new JSONException("Trailing comma", tok.getLine(), tok.getPos());
+        } else {
+          c = tok.nextClean();
+        }
+      } else if (c == '}') break;
       String key = tok.nextString();
       c = tok.next();
-      if (c != ':') throw new JSONException("Unexpected character (expected \":\")", tok.getLine(), tok.getPos());
-      if (tok.peek() == ' ') c = tok.next();
+      if (c != ':') throw new JSONException("Unexpected character (expected \":\")", tok.getLine(), tok.getPos(), escapeChar(c));
+      c = tok.nextClean();
       Object value = null;
-      switch (tok.peek()) {
+      switch (tok.current) {
         case '"':
-          c = tok.next();
           value = tok.nextString();
           break;
         case '[':
@@ -43,10 +48,10 @@ public class JSONParser {
           value = parse(tok);
           break;
         default:
-          value = tok.parseUnquoted(tok.nextUntil(" ,\r\n}"));
+          // add the first character as it would otherwise get cut off
+          value = tok.parseUnquoted(tok.current + tok.nextUntil(" ,\r\n}"));
           break;
       }
-      if (tok.peek() == ',') c = tok.next();
       out.set(key, new JSONValue(value));
     }
     return out;
@@ -62,6 +67,7 @@ public class JSONParser {
    */
   public static JSONObject parse(String in) throws NumberFormatException, JSONException {
     JSONTokenizer tok = new JSONTokenizer(in);
+    tok.next();
     return parse(tok);
   }
   
@@ -75,13 +81,22 @@ public class JSONParser {
    */
   private static JSONValue.Array parseArray(JSONTokenizer tok) throws NumberFormatException, JSONException {
     JSONValue.Array out = new JSONValue.Array();
-    tok.next();
+    char c;
     while (true) {
       Object value = null;
-      tok.nextUntilRegex("[^\\s]");
-      switch (tok.peek()) {
+      c = tok.nextClean();
+      if (c == ',') {
+        if (tok.peekNextClean() == ']') {
+          throw new JSONException("Trailing comma in array", tok.getLine(), tok.getPos());
+        } else {
+          c = tok.nextClean();
+        }
+      } else if (c == ']') {
+        tok.next();
+        break;
+      }
+      switch (tok.current) {
         case '"':
-          tok.next();
           value = tok.nextString();
           break;
         case '[':
@@ -90,30 +105,12 @@ public class JSONParser {
         case '{':
           value = parse(tok);
           break;
-        case ']':
-          tok.next();
-          throw new JSONException("Trailing comma", tok.getLine(), tok.getPos());
         default:
-          value = tok.parseUnquoted(tok.nextUntil(",]"));
+          // add the first character as it would otherwise get cut off
+          value = tok.parseUnquoted(tok.current + tok.nextUntil(",]"));
           break;
       }
       out.add(new JSONValue(value));
-      char peeked = tok.peekNextClean();
-      if (peeked == ',') {
-        tok.nextClean();
-      } else if (peeked == ']') {
-        tok.nextClean();
-        tok.next();
-        break;
-      } else {
-        tok.nextClean();
-        throw new JSONException(
-          "Unexpected token in array (expected \",\" or \"]\")",
-          tok.getLine(),
-          tok.getPos(),
-          escapeChar(peeked)
-        );
-      }
     }
     return out;
   }

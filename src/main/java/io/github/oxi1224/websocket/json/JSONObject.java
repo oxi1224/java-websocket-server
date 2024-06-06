@@ -81,4 +81,21 @@ public class JSONObject implements Iterable<JSONPair> {
   public Iterator<JSONPair> iterator() {
     return new JSONIterator(this);
   }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("{");
+    for (JSONPair p : this) {
+      JSONValue v = p.getValue();
+      if (v.getValue() instanceof String) {
+        sb.append(String.format("\"%s\":\"%s\",", p.getKey(), v.getValue()));
+      } else {
+        sb.append(String.format("\"%s\":%s,", p.getKey(), p.getValue().toString()));
+      }
+    }
+    sb.delete(sb.length() - 1, sb.length());
+    sb.append("}");
+    return sb.toString();
+  }
 }
