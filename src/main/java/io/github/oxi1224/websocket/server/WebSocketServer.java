@@ -10,6 +10,7 @@ import java.util.Map;
 
 import io.github.oxi1224.websocket.core.DataFrame;
 import io.github.oxi1224.websocket.core.Opcode;
+import io.github.oxi1224.websocket.json.JSONException;
 import io.github.oxi1224.websocket.messages.Handler;
 import io.github.oxi1224.websocket.messages.HandlerPair;
 import io.github.oxi1224.websocket.messages.MessageHandler;
@@ -24,6 +25,7 @@ public class WebSocketServer extends java.net.ServerSocket {
   private String handlersPackageName;
   /** Whether to use regular websockets (no message identification) */
   private boolean normalWebsocket = false;
+  private boolean jsonProtocol = true;
 
   public WebSocketServer(int port) throws IOException {
     super(port);
@@ -48,10 +50,20 @@ public class WebSocketServer extends java.net.ServerSocket {
   }
   
   /**
-   * Forces the server into using standard WebSocket (no message identification)
+   * Forces the server into using standard WebSocket
+   * <p>Disables JSON communication and message identification</p>
   */
   public void useNormalWebsocket() {
     normalWebsocket = true;
+    jsonProtocol = false;
+  }
+  
+  /**
+   * Forces the server to use plain text/binary
+   * <p>Does not disable message identification</p>
+   */
+  public void disableJSON() {
+    jsonProtocol = false;
   }
   
   /**
@@ -61,10 +73,11 @@ public class WebSocketServer extends java.net.ServerSocket {
     if (handlersPackageName == null || handlersPackageName.isBlank()) {
       throw new InvalidConfigurationError("handlersPackageName is blank, set it via setHandlersPackageName");
     }
-    collectHandlers(); 
-
+    collectHandlers();
     while (true) {
       ClientSocket client = new ClientSocket(this.accept());
+      if (normalWebsocket) client.useNormalWebsocket();
+      else if (!jsonProtocol) client.disableJSON();
       HandlerPair connectHandler = handlers.get(DefaultHandlerID.CONNECT);
       if (connectHandler != null) connectHandler.invoke(client);
       HandlerPair closeHandler = handlers.get(DefaultHandlerID.CLOSE);
@@ -96,16 +109,26 @@ public class WebSocketServer extends java.net.ServerSocket {
               if (p != null) p.invoke(client);
               break;
             }
-            case PONG: {
+            case PONG:
               break;
-            }
             default: {
               if (normalWebsocket || refFrame.getRsv1()) {
                 HandlerPair p = handlers.get(DefaultHandlerID.DEFAULT);
                 if (p != null) p.invoke(client);
               } else {
-                String payload = client.getPayload();
-                String messageID = payload.substring(0, payload.indexOf(" "));
+                String messageID;
+                if (opcode == Opcode.JSON) {
+                  try {
+                    messageID = client.getFullJSONPayload().get("messageID", String.class);
+                  } catch (JSONException e) {
+                    System.out.println("Payload did not parse to JSON or did not have messageID");
+                    client.close();
+                    return;
+                  }
+                } else {
+                  String payload = client.getPayload();
+                  messageID = payload.substring(0, payload.indexOf(" "));
+                }
                 HandlerPair p = handlers.get(handlers.containsKey(messageID) ? messageID : DefaultHandlerID.DEFAULT);
                 if (p != null) p.invoke(client);
               }

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+import io.github.oxi1224.websocket.json.JSONObject;
+
 /**
  * Utility class containing multiple, valid overloads of write()
  */
@@ -72,6 +74,13 @@ public class DataWriter {
 
   public void write(String payload) throws IOException {
     write(true, Opcode.TEXT, payload);
+  }
+
+  public void write(String messageID, JSONObject payload) throws IOException {
+    JSONObject obj = new JSONObject();
+    obj.set("messageID", messageID);
+    obj.set("__data", payload);
+    write(true, Opcode.JSON, obj.toString());
   }
 
   /**

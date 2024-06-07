@@ -6,6 +6,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
+import io.github.oxi1224.websocket.json.JSONException;
+import io.github.oxi1224.websocket.json.JSONObject;
+import io.github.oxi1224.websocket.json.JSONParser;
 import io.github.oxi1224.websocket.shared.exceptions.UnexpectedFrameException;
 
 /**
@@ -67,6 +70,14 @@ public class DataReader {
    */
   public String getPayload() {
     return new String(payload, StandardCharsets.UTF_8);
+  }
+  
+  /**
+   * @return the collected payload as a JSONObject
+   * @throws JSONException If the payload is not valid JSON
+   */
+  public JSONObject getJSONPayload() throws JSONException {
+    return JSONParser.parse(new String(payload, StandardCharsets.UTF_8));
   }
   
   /**

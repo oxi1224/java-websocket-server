@@ -26,6 +26,8 @@ import io.github.oxi1224.websocket.core.DataReader;
 import io.github.oxi1224.websocket.core.DataWriter;
 import io.github.oxi1224.websocket.core.Opcode;
 import io.github.oxi1224.websocket.core.StatusCode;
+import io.github.oxi1224.websocket.json.JSONException;
+import io.github.oxi1224.websocket.json.JSONObject;
 import io.github.oxi1224.websocket.messages.Handler;
 import io.github.oxi1224.websocket.messages.HandlerPair;
 import io.github.oxi1224.websocket.messages.MessageHandler;
@@ -35,6 +37,7 @@ import io.github.oxi1224.websocket.shared.exceptions.ConnectionException;
 import io.github.oxi1224.websocket.shared.exceptions.InvalidConfigurationError;
 import io.github.oxi1224.websocket.shared.exceptions.InvalidHandlerError;
 import io.github.oxi1224.websocket.shared.exceptions.UnexpectedFrameException;
+import io.github.oxi1224.websocket.shared.exceptions.UsageError;
 import io.github.oxi1224.websocket.shared.http.HeaderMap;
 import io.github.oxi1224.websocket.shared.http.HttpRequest;
 import io.github.oxi1224.websocket.shared.http.HttpResponse;
@@ -42,7 +45,8 @@ import io.github.oxi1224.websocket.shared.util.ClassScanner;
 
 public class Client extends DataWriter {
   /** Whether or not to use regular websockets (no message identification) */
-  public static boolean normalWebsocket = false;
+  private static boolean normalWebsocket = false;
+  private static boolean jsonProtocol = true;
   private final Socket socket;
   private final InputStream in;
   private final DataReader reader;
@@ -59,6 +63,9 @@ public class Client extends DataWriter {
    */
   private Client(Socket socket, String origin) throws IOException, ConnectionException {
     super(socket.getOutputStream());
+    this.socket = socket;
+
+    // Begin the handshake
     setMasking(true);
     String websocketKey = generateKey();
     HeaderMap headers = new HeaderMap(
@@ -67,14 +74,18 @@ public class Client extends DataWriter {
       new HeaderMap.HeaderPair("Upgrade", "websocket"),
       new HeaderMap.HeaderPair("Connection", "Upgrade"),
       new HeaderMap.HeaderPair("Sec-WebSocket-Key", websocketKey),
-      new HeaderMap.HeaderPair("Sec-WebSocket-Version", Integer.toString(Constants.WS_VERSION))
+      new HeaderMap.HeaderPair("Sec-WebSocket-Version", Constants.WS_VERSION_STR)
     );
-    if (!normalWebsocket) headers.put(new HeaderMap.HeaderPair("Sec-WebSocket-Protocol", Constants.SUBPROTOCOL_NAME));
+    String protocol = Constants.JSON_SUBPROTOCOL;
+    if (!jsonProtocol) protocol = Constants.SUBPROTOCOL_NAME;
+    if (normalWebsocket) protocol = null;
+    if (protocol != null) headers.put(new HeaderMap.HeaderPair("Sec-WebSocket-Protocol", protocol));
     HttpRequest req = new HttpRequest("GET", "/", "1.1", headers, "");
     byte[] bytes = req.getBytes(); 
     socket.getOutputStream().write(bytes, 0, bytes.length);
-    this.socket = socket;
     in = (socket.getInputStream());
+
+    // Read the entire response before parsing
     while (in.available() == 0) {
       try {
         Thread.sleep(100);
@@ -85,6 +96,8 @@ public class Client extends DataWriter {
         System.exit(1);
       }
     }
+
+    // Verify that the response is successful
     HttpResponse res = HttpResponse.parse(in);
     if (res.getStatusCode() != 101) {
       System.out.println("Failed to connect to the specified host");
@@ -95,7 +108,8 @@ public class Client extends DataWriter {
       }
       throw new ConnectionException("Failed to connect to the specified host");
     }
-
+    
+    // Verify that the Sec-WebSocket-Accept key is valid
     String acceptKey = res.getFirstHeaderValue("Sec-WebSocket-Accept");
     byte[] sha1 = new byte[0];
     try {
@@ -104,11 +118,11 @@ public class Client extends DataWriter {
         .getBytes(StandardCharsets.UTF_8));
     } catch (NoSuchAlgorithmException e) {}
     String encodedKey = Base64.getEncoder().encodeToString(sha1);
-
     if (!encodedKey.equals(acceptKey)) {
       socket.close();
       throw new ConnectionException("The server has provided an invalid Sec-WebSocket-Accept key");
     }
+
     reader = new DataReader(new BufferedInputStream(in));
   }
   
@@ -142,17 +156,31 @@ public class Client extends DataWriter {
   }
 
   /**
-   * Forces the client into using standard WebSocket (no message identification)
+   * Forces the client into using regular WebSocket
+   * <p>Disables JSON communication and message identification</p>
    */
   public static void useNormalWebsocket() {
     normalWebsocket = true;
+    jsonProtocol = false;
+  }
+  
+  /**
+   * Disables JSON communication
+   * <p>Does not disable message identification</p>
+   */
+  public static void disableJSON() {
+    jsonProtocol = false;
+  }
+
+  public static void enableJSON() {
+    jsonProtocol = true;
   }
   
   /**
    * Sets the package name where all message handlers are located
    * The handlers must have an @Handler annotation and must extend MessageHandler
-   * @see io.github.oxi1224.websocket.messages.MessageHandler
-   * @see io.github.oxi1224.websocket.messages.handler
+   * @see MessageHandler
+   * @see Handler
    */
   public void setHandlersPackageName(String packageName) {
     handlersPackageName = packageName;
@@ -230,9 +258,8 @@ public class Client extends DataWriter {
   }
   
   /**
-   * Pongs are handled automatically
-   *
    * Sends a pong frame to the server
+   * <p>Pongs are handled automatically</p>
    */
   public void pong(byte[] payload) throws IOException {
     write(true, Opcode.PONG, payload);
@@ -260,7 +287,7 @@ public class Client extends DataWriter {
   
   /**
    * Starts the closing procedure, awaits for a response otherwise closes after 10s
-   * @param statusCode - A status code from {@link io.github.oxi1224.websocket.core.StatusCode}
+   * @param statusCode - A status code from {@link StatusCode}
    * @param reason - The reason for closure
    */
   public void close(StatusCode statusCode, String reason) throws IOException {
@@ -318,12 +345,24 @@ public class Client extends DataWriter {
     while (true) {
       try {
         read();
+        Opcode opcode = getPayloadStartFrame().getOpcode();
         if (normalWebsocket || !getPayloadStartFrame().getRsv1()) {
           HandlerPair p = handlers.get(DefaultHandlerID.DEFAULT);
           if (p != null) p.invoke(this);
         } else {
-          String payload = getPayload();
-          String messageID = payload.substring(0, payload.indexOf(" "));
+          String messageID;
+          if (opcode == Opcode.JSON) {
+            try {
+              messageID = getFullJSONPayload().get("messageID", String.class);
+            } catch (JSONException e) {
+              System.out.println("Payload did not parse to JSON or did not have messageID");
+              close();
+              return;
+            }
+          } else {
+            String payload = getPayload();
+            messageID = payload.substring(0, payload.indexOf(" "));
+          }
           HandlerPair p = handlers.get(handlers.containsKey(messageID) ? messageID : DefaultHandlerID.DEFAULT);
           if (p != null) p.invoke(this);
         }
@@ -345,9 +384,31 @@ public class Client extends DataWriter {
     return Base64.getEncoder().encodeToString(key);
   }
 
-  public byte[] getBytePayload() { return this.reader.getBytePayload(); }
-  public String getPayload() { return this.reader.getPayload(); }
-  public String getPayload(Charset chrset) { return this.reader.getPayload(chrset); }
+  public byte[] getBytePayload() {
+    if (!normalWebsocket) throw new UsageError("Current client configuration does not support reading as bytes");
+    return this.reader.getBytePayload();
+  }
+
+  public String getPayload() {
+    if (jsonProtocol) throw new UsageError("Current client configuration does not support reading as a string");
+    return this.reader.getPayload();
+  }
+
+  public String getPayload(Charset chrset) {
+    if (jsonProtocol) throw new UsageError("Current client configuration does not support reading as a string");
+    return this.reader.getPayload(chrset);
+  }
+  
+  public JSONObject getFullJSONPayload() throws JSONException {
+    if (!jsonProtocol) throw new UsageError("Current client configuration does not support reading as JSON");
+    return this.reader.getJSONPayload();
+  }
+
+  public JSONObject getJSONPayload() throws JSONException {
+    if (!jsonProtocol) throw new UsageError("Current client configuration does not support reading as JSON");
+    return this.reader.getJSONPayload().get("__data", JSONObject.class);
+  }
+
   /**
    * @return the first frame of entire payload
    */
